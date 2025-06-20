@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"log"
 
 	"google.golang.org/grpc"
 
@@ -22,6 +23,14 @@ func NewPaymentRepository(conn *grpc.ClientConn) PaymentRepository {
 }
 
 func (r PaymentRepository) Confirm(ctx context.Context, paymentID string) error {
+	log.Printf("PaymentRepository.Confirm: Confirming payment: %s", paymentID)
+
 	_, err := r.client.ConfirmPayment(ctx, &paymentspb.ConfirmPaymentRequest{Id: paymentID})
+	if err != nil {
+		log.Printf("PaymentRepository.Confirm: Payment confirmation failed for payment %s: %v", paymentID, err)
+		return err
+	}
+
+	log.Printf("PaymentRepository.Confirm: Payment %s confirmed successfully", paymentID)
 	return err
 }

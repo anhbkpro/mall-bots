@@ -15,7 +15,7 @@ var (
 type ShoppingList struct {
 	ddd.AggregateBase
 	OrderID       string
-	Stops         Stops
+	Items         []*Item
 	AssignedBotID string
 	Status        ShoppingListStatus
 }
@@ -27,7 +27,7 @@ func CreateShopping(id, orderID string) *ShoppingList {
 		},
 		OrderID: orderID,
 		Status:  ShoppingListIsAvailable,
-		Stops:   make(Stops),
+		Items:   make([]*Item, 0),
 	}
 
 	shoppingList.AddEvent(&ShoppingListCreated{
@@ -37,16 +37,14 @@ func CreateShopping(id, orderID string) *ShoppingList {
 	return shoppingList
 }
 
-func (sl *ShoppingList) AddItem(store *Store, product *Product, quantity int) error {
-	if _, exists := sl.Stops[store.ID]; !exists {
-		sl.Stops[store.ID] = &Stop{
-			StoreName:     store.Name,
-			StoreLocation: store.Location,
-			Items:         make(Items),
-		}
+func (sl *ShoppingList) AddItem(productID string, quantity int) error {
+	item := &Item{
+		ProductName: productID, // This will be resolved to actual product name
+		Quantity:    quantity,
 	}
 
-	return sl.Stops[store.ID].AddItem(product, quantity)
+	sl.Items = append(sl.Items, item)
+	return nil
 }
 
 func (sl ShoppingList) isCancelable() bool {

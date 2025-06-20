@@ -20,7 +20,7 @@ type Module struct{}
 func (m Module) Startup(ctx context.Context, mono monolith.Monolith) error {
 	// setup Driven adapters
 	domainDispatcher := ddd.NewEventDispatcher()
-	ordersRepo := postgres.NewOrderRepository("orders.orders", mono.DB())
+	ordersRepo := postgres.NewOrderRepository("ordering.orders", mono.DB())
 	conn, err := grpc.Dial(ctx, mono.Config().Rpc.Address())
 	if err != nil {
 		return errors.Wrap(err, "dial ordering service")

@@ -85,7 +85,7 @@ type ShoppingList struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	OrderId       string                 `protobuf:"bytes,2,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
-	Stops         map[string]*Stop       `protobuf:"bytes,3,rep,name=stops,proto3" json:"stops,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Items         []*Item                `protobuf:"bytes,3,rep,name=items,proto3" json:"items,omitempty"`
 	AssignedBotId string                 `protobuf:"bytes,4,opt,name=assigned_bot_id,json=assignedBotId,proto3" json:"assigned_bot_id,omitempty"`
 	Status        string                 `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -136,9 +136,9 @@ func (x *ShoppingList) GetOrderId() string {
 	return ""
 }
 
-func (x *ShoppingList) GetStops() map[string]*Stop {
+func (x *ShoppingList) GetItems() []*Item {
 	if x != nil {
-		return x.Stops
+		return x.Items
 	}
 	return nil
 }
@@ -157,69 +157,9 @@ func (x *ShoppingList) GetStatus() string {
 	return ""
 }
 
-type Stop struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	StoreName     string                 `protobuf:"bytes,1,opt,name=store_name,json=storeName,proto3" json:"store_name,omitempty"`
-	StoreLocation string                 `protobuf:"bytes,2,opt,name=store_location,json=storeLocation,proto3" json:"store_location,omitempty"`
-	Items         map[string]*Item       `protobuf:"bytes,3,rep,name=items,proto3" json:"items,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Stop) Reset() {
-	*x = Stop{}
-	mi := &file_depotpb_messages_proto_msgTypes[2]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Stop) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Stop) ProtoMessage() {}
-
-func (x *Stop) ProtoReflect() protoreflect.Message {
-	mi := &file_depotpb_messages_proto_msgTypes[2]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Stop.ProtoReflect.Descriptor instead.
-func (*Stop) Descriptor() ([]byte, []int) {
-	return file_depotpb_messages_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *Stop) GetStoreName() string {
-	if x != nil {
-		return x.StoreName
-	}
-	return ""
-}
-
-func (x *Stop) GetStoreLocation() string {
-	if x != nil {
-		return x.StoreLocation
-	}
-	return ""
-}
-
-func (x *Stop) GetItems() map[string]*Item {
-	if x != nil {
-		return x.Items
-	}
-	return nil
-}
-
 type Item struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	ProductName   string                 `protobuf:"bytes,1,opt,name=product_name,json=productName,proto3" json:"product_name,omitempty"`
 	Quantity      int32                  `protobuf:"varint,2,opt,name=quantity,proto3" json:"quantity,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -227,7 +167,7 @@ type Item struct {
 
 func (x *Item) Reset() {
 	*x = Item{}
-	mi := &file_depotpb_messages_proto_msgTypes[3]
+	mi := &file_depotpb_messages_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -239,7 +179,7 @@ func (x *Item) String() string {
 func (*Item) ProtoMessage() {}
 
 func (x *Item) ProtoReflect() protoreflect.Message {
-	mi := &file_depotpb_messages_proto_msgTypes[3]
+	mi := &file_depotpb_messages_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -252,12 +192,12 @@ func (x *Item) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Item.ProtoReflect.Descriptor instead.
 func (*Item) Descriptor() ([]byte, []int) {
-	return file_depotpb_messages_proto_rawDescGZIP(), []int{3}
+	return file_depotpb_messages_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *Item) GetName() string {
+func (x *Item) GetProductName() string {
 	if x != nil {
-		return x.Name
+		return x.ProductName
 	}
 	return ""
 }
@@ -278,28 +218,15 @@ const file_depotpb_messages_proto_rawDesc = "" +
 	"\n" +
 	"product_id\x18\x01 \x01(\tR\tproductId\x12\x19\n" +
 	"\bstore_id\x18\x02 \x01(\tR\astoreId\x12\x1a\n" +
-	"\bquantity\x18\x03 \x01(\x05R\bquantity\"\xfa\x01\n" +
+	"\bquantity\x18\x03 \x01(\x05R\bquantity\"\x9e\x01\n" +
 	"\fShoppingList\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
-	"\border_id\x18\x02 \x01(\tR\aorderId\x126\n" +
-	"\x05stops\x18\x03 \x03(\v2 .depotpb.ShoppingList.StopsEntryR\x05stops\x12&\n" +
+	"\border_id\x18\x02 \x01(\tR\aorderId\x12#\n" +
+	"\x05items\x18\x03 \x03(\v2\r.depotpb.ItemR\x05items\x12&\n" +
 	"\x0fassigned_bot_id\x18\x04 \x01(\tR\rassignedBotId\x12\x16\n" +
-	"\x06status\x18\x05 \x01(\tR\x06status\x1aG\n" +
-	"\n" +
-	"StopsEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\tR\x03key\x12#\n" +
-	"\x05value\x18\x02 \x01(\v2\r.depotpb.StopR\x05value:\x028\x01\"\xc5\x01\n" +
-	"\x04Stop\x12\x1d\n" +
-	"\n" +
-	"store_name\x18\x01 \x01(\tR\tstoreName\x12%\n" +
-	"\x0estore_location\x18\x02 \x01(\tR\rstoreLocation\x12.\n" +
-	"\x05items\x18\x03 \x03(\v2\x18.depotpb.Stop.ItemsEntryR\x05items\x1aG\n" +
-	"\n" +
-	"ItemsEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\tR\x03key\x12#\n" +
-	"\x05value\x18\x02 \x01(\v2\r.depotpb.ItemR\x05value:\x028\x01\"6\n" +
-	"\x04Item\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1a\n" +
+	"\x06status\x18\x05 \x01(\tR\x06status\"E\n" +
+	"\x04Item\x12!\n" +
+	"\fproduct_name\x18\x01 \x01(\tR\vproductName\x12\x1a\n" +
 	"\bquantity\x18\x02 \x01(\x05R\bquantityB}\n" +
 	"\vcom.depotpbB\rMessagesProtoP\x01Z#eda-in-golang/depot/depotpb/depotpb\xa2\x02\x03DXX\xaa\x02\aDepotpb\xca\x02\aDepotpb\xe2\x02\x13Depotpb\\GPBMetadata\xea\x02\aDepotpbb\x06proto3"
 
@@ -315,25 +242,19 @@ func file_depotpb_messages_proto_rawDescGZIP() []byte {
 	return file_depotpb_messages_proto_rawDescData
 }
 
-var file_depotpb_messages_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_depotpb_messages_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_depotpb_messages_proto_goTypes = []any{
 	(*OrderItem)(nil),    // 0: depotpb.OrderItem
 	(*ShoppingList)(nil), // 1: depotpb.ShoppingList
-	(*Stop)(nil),         // 2: depotpb.Stop
-	(*Item)(nil),         // 3: depotpb.Item
-	nil,                  // 4: depotpb.ShoppingList.StopsEntry
-	nil,                  // 5: depotpb.Stop.ItemsEntry
+	(*Item)(nil),         // 2: depotpb.Item
 }
 var file_depotpb_messages_proto_depIdxs = []int32{
-	4, // 0: depotpb.ShoppingList.stops:type_name -> depotpb.ShoppingList.StopsEntry
-	5, // 1: depotpb.Stop.items:type_name -> depotpb.Stop.ItemsEntry
-	2, // 2: depotpb.ShoppingList.StopsEntry.value:type_name -> depotpb.Stop
-	3, // 3: depotpb.Stop.ItemsEntry.value:type_name -> depotpb.Item
-	4, // [4:4] is the sub-list for method output_type
-	4, // [4:4] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	2, // 0: depotpb.ShoppingList.items:type_name -> depotpb.Item
+	1, // [1:1] is the sub-list for method output_type
+	1, // [1:1] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_depotpb_messages_proto_init() }
@@ -347,7 +268,7 @@ func file_depotpb_messages_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_depotpb_messages_proto_rawDesc), len(file_depotpb_messages_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

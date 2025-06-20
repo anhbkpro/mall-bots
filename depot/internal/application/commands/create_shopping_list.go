@@ -40,11 +40,11 @@ func (h CreateShoppingListHandler) CreateShoppingList(ctx context.Context, cmd C
 		if err != nil {
 			return errors.Wrap(err, "building shopping list")
 		}
-		product, err := h.products.Find(ctx, item.ProductID)
+		_, err = h.products.Find(ctx, item.ProductID)
 		if err != nil {
 			return errors.Wrap(err, "building shopping list")
 		}
-		err = list.AddItem(store, product, item.Quantity)
+		err = list.AddItem(store.ID, item.Quantity)
 		if err != nil {
 			return errors.Wrap(err, "building shopping list")
 		}

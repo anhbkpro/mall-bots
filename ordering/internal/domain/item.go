@@ -1,10 +1,10 @@
 package domain
 
 type Item struct {
-	ProductID   string
-	StoreID     string
-	StoreName   string
-	ProductName string
-	Price       float64
-	Quantity    int
+	ProductID   string  `json:"product_id"`
+	StoreID     string  `json:"store_id"`
+	StoreName   string  `json:"store_name"`
+	ProductName string  `json:"product_name"`
+	Price       float64 `json:"price"`
+	Quantity    int     `json:"quantity"`
 }

@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"log"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
@@ -28,11 +29,18 @@ func RegisterServer(app application.App, registrar grpc.ServiceRegistrar) error 
 func (s server) CreateOrder(ctx context.Context, request *orderingpb.CreateOrderRequest) (*orderingpb.CreateOrderResponse, error) {
 	id := uuid.New().String()
 
+	log.Printf("gRPC.CreateOrder: Received request for customer: %s, payment: %s, items count: %d",
+		request.GetCustomerId(), request.GetPaymentId(), len(request.Items))
+	log.Printf("gRPC.CreateOrder: Generated order ID: %s", id)
+
 	items := make([]*domain.Item, 0, len(request.Items))
-	for _, item := range request.Items {
+	for i, item := range request.Items {
+		log.Printf("gRPC.CreateOrder: Processing item %d - ProductID: %s, StoreID: %s, Quantity: %d",
+			i+1, item.GetProductId(), item.GetStoreId(), item.GetQuantity())
 		items = append(items, s.itemToDomain(item))
 	}
 
+	log.Printf("gRPC.CreateOrder: Calling application CreateOrder command")
 	err := s.app.CreateOrder(ctx, commands.CreateOrder{
 		ID:         id,
 		CustomerID: request.GetCustomerId(),
@@ -40,6 +48,12 @@ func (s server) CreateOrder(ctx context.Context, request *orderingpb.CreateOrder
 		Items:      items,
 	})
 
+	if err != nil {
+		log.Printf("gRPC.CreateOrder: Application CreateOrder failed: %v", err)
+		return &orderingpb.CreateOrderResponse{Id: id}, err
+	}
+
+	log.Printf("gRPC.CreateOrder: Order created successfully, returning ID: %s", id)
 	return &orderingpb.CreateOrderResponse{Id: id}, err
 }
 
@@ -60,29 +74,46 @@ func (s server) CompleteOrder(ctx context.Context, request *orderingpb.CompleteO
 }
 
 func (s server) GetOrder(ctx context.Context, request *orderingpb.GetOrderRequest) (*orderingpb.GetOrderResponse, error) {
-	order, err := s.app.GetOrder(ctx, queries.GetOrder{ID: request.GetId()})
+	orderID := request.GetId()
+	log.Printf("gRPC.GetOrder: Received request for order ID: %s", orderID)
+
+	log.Printf("gRPC.GetOrder: Calling application GetOrder query")
+	order, err := s.app.GetOrder(ctx, queries.GetOrder{ID: orderID})
 	if err != nil {
+		log.Printf("gRPC.GetOrder: Application GetOrder failed: %v", err)
 		return nil, err
 	}
 
-	return &orderingpb.GetOrderResponse{
+	log.Printf("gRPC.GetOrder: Order found successfully, converting to protobuf response")
+	response := &orderingpb.GetOrderResponse{
 		Order: s.orderFromDomain(order),
-	}, nil
+	}
+
+	log.Printf("gRPC.GetOrder: Successfully returning order %s with %d items", orderID, len(order.Items))
+	return response, nil
 }
 
 func (s server) orderFromDomain(order *domain.Order) *orderingpb.Order {
+	log.Printf("gRPC.orderFromDomain: Converting domain order %s to protobuf", order.ID)
+
 	items := make([]*orderingpb.Item, 0, len(order.Items))
-	for _, item := range order.Items {
+	for i, item := range order.Items {
+		log.Printf("gRPC.orderFromDomain: Converting item %d - ProductID: %s, StoreID: %s, Quantity: %d, Price: %.2f",
+			i+1, item.ProductID, item.StoreID, item.Quantity, item.Price)
 		items = append(items, s.itemFromDomain(item))
 	}
 
-	return &orderingpb.Order{
+	response := &orderingpb.Order{
 		Id:         order.ID,
 		CustomerId: order.CustomerID,
 		PaymentId:  order.PaymentID,
 		Items:      items,
 		Status:     order.Status.String(),
 	}
+
+	log.Printf("gRPC.orderFromDomain: Successfully converted order %s with %d items, status: %s",
+		order.ID, len(items), order.Status.String())
+	return response
 }
 
 func (s server) itemToDomain(item *orderingpb.Item) *domain.Item {
@@ -97,7 +128,9 @@ func (s server) itemToDomain(item *orderingpb.Item) *domain.Item {
 }
 
 func (s server) itemFromDomain(item *domain.Item) *orderingpb.Item {
-	return &orderingpb.Item{
+	log.Printf("gRPC.itemFromDomain: Converting domain item - ProductID: %s, StoreID: %s", item.ProductID, item.StoreID)
+
+	response := &orderingpb.Item{
 		StoreId:     item.StoreID,
 		ProductId:   item.ProductID,
 		StoreName:   item.StoreName,
@@ -105,4 +138,8 @@ func (s server) itemFromDomain(item *domain.Item) *orderingpb.Item {
 		Price:       item.Price,
 		Quantity:    int32(item.Quantity),
 	}
+
+	log.Printf("gRPC.itemFromDomain: Successfully converted item - ProductID: %s, StoreID: %s, Quantity: %d, Price: %.2f",
+		item.ProductID, item.StoreID, item.Quantity, item.Price)
+	return response
 }

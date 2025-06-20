@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"log"
 
 	"google.golang.org/grpc"
 
@@ -20,6 +21,14 @@ func NewCustomerRepository(conn *grpc.ClientConn) CustomerRepository {
 }
 
 func (r CustomerRepository) Authorize(ctx context.Context, customerID string) error {
+	log.Printf("CustomerRepository.Authorize: Authorizing customer: %s", customerID)
+
 	_, err := r.client.AuthorizeCustomer(ctx, &customerspb.AuthorizeCustomerRequest{Id: customerID})
+	if err != nil {
+		log.Printf("CustomerRepository.Authorize: Authorization failed for customer %s: %v", customerID, err)
+		return err
+	}
+
+	log.Printf("CustomerRepository.Authorize: Customer %s authorized successfully", customerID)
 	return err
 }

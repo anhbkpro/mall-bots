@@ -2,6 +2,7 @@ package domain
 
 import (
 	"eda-in-golang/internal/ddd"
+	"log"
 
 	"github.com/stackus/errors"
 )
@@ -24,27 +25,38 @@ type Order struct {
 }
 
 func CreateOrder(id, customerID, paymentID string, items []*Item) (*Order, error) {
+	log.Printf("Domain.CreateOrder: Creating order with ID: %s", id)
+
 	if len(items) == 0 {
+		log.Printf("Domain.CreateOrder: Validation failed - no items provided")
 		return nil, ErrOrderHasNoItems
 	}
 
 	if customerID == "" {
+		log.Printf("Domain.CreateOrder: Validation failed - customer ID is blank")
 		return nil, ErrCustomerIDCannotBeBlank
 	}
 
 	if paymentID == "" {
+		log.Printf("Domain.CreateOrder: Validation failed - payment ID is blank")
 		return nil, ErrPaymentIDCannotBeBlank
 	}
+
+	log.Printf("Domain.CreateOrder: All validations passed, creating order object")
 
 	order := &Order{
 		AggregateBase: ddd.AggregateBase{ID: id},
 		CustomerID:    customerID,
 		PaymentID:     paymentID,
+		InvoiceID:     "",
+		ShoppingID:    "",
 		Items:         items,
 		Status:        OrderStatusPending,
 	}
 
 	order.AddEvent(OrderCreated{Order: order})
+
+	log.Printf("Domain.CreateOrder: Order created successfully with %d items, status: %s", len(items), order.Status.String())
 
 	return order, nil
 }

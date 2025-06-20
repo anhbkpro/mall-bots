@@ -33,10 +33,18 @@ func (r BasketRepository) Find(ctx context.Context, basketID string) (*domain.Ba
 	}
 	var items []byte
 	var status string
+	var paymentID sql.NullString
 
-	err := r.db.QueryRowContext(ctx, r.table(query), basketID).Scan(&basket.CustomerID, &basket.PaymentID, &items, &status)
+	err := r.db.QueryRowContext(ctx, r.table(query), basketID).Scan(&basket.CustomerID, &paymentID, &items, &status)
 	if err != nil {
 		return nil, errors.ErrInternalServerError.Err(err)
+	}
+
+	// Handle nullable payment_id
+	if paymentID.Valid {
+		basket.PaymentID = paymentID.String
+	} else {
+		basket.PaymentID = ""
 	}
 
 	basket.Status = domain.ToBasketStatus(status)
@@ -57,7 +65,14 @@ func (r BasketRepository) Save(ctx context.Context, basket *domain.Basket) error
 		return errors.ErrInternalServerError.Err(err)
 	}
 
-	_, err = r.db.ExecContext(ctx, r.table(query), basket.ID, basket.CustomerID, basket.PaymentID, items, basket.Status.String())
+	// Handle empty payment_id as NULL for database
+	var paymentID sql.NullString
+	if basket.PaymentID != "" {
+		paymentID.String = basket.PaymentID
+		paymentID.Valid = true
+	}
+
+	_, err = r.db.ExecContext(ctx, r.table(query), basket.ID, basket.CustomerID, paymentID, items, basket.Status.String())
 
 	return errors.ErrInternalServerError.Err(err)
 }
@@ -70,7 +85,14 @@ func (r BasketRepository) Update(ctx context.Context, basket *domain.Basket) err
 		return errors.ErrInternalServerError.Err(err)
 	}
 
-	_, err = r.db.ExecContext(ctx, r.table(query), basket.ID, basket.CustomerID, basket.PaymentID, items, basket.Status.String())
+	// Handle empty payment_id as NULL for database
+	var paymentID sql.NullString
+	if basket.PaymentID != "" {
+		paymentID.String = basket.PaymentID
+		paymentID.Valid = true
+	}
+
+	_, err = r.db.ExecContext(ctx, r.table(query), basket.ID, basket.CustomerID, paymentID, items, basket.Status.String())
 
 	return errors.ErrInternalServerError.Err(err)
 }
