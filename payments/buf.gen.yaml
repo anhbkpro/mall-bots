@@ -1,0 +1,28 @@
+version: v1
+managed:
+  enabled: true
+  go_package_prefix:
+    default: eda-in-golang/payments/paymentspb
+    except:
+      - buf.build/googleapis/googleapis
+plugins:
+  - name: go # Generates Go structs and message types in the current directory with relative paths.
+    out: .
+    opt:
+      - paths=source_relative
+  - name: go-grpc # Generates Go gRPC server and client code for service definitions.
+    out: .
+    opt:
+      - paths=source_relative
+  - name: grpc-gateway # Generates HTTP/REST gateway code that translates REST calls to gRPC, using API annotations from the specified YAML file.
+    out: .
+    opt:
+      - paths=source_relative
+      - grpc_api_configuration=internal/rest/api.annotations.yaml
+  - name: openapiv2 # Generates OpenAPI/Swagger documentation in internal/rest/, merging all specs into a single api file.
+    out: internal/rest
+    opt:
+      - grpc_api_configuration=internal/rest/api.annotations.yaml
+      - openapi_configuration=internal/rest/api.openapi.yaml
+      - allow_merge=true
+      - merge_file_name=api
