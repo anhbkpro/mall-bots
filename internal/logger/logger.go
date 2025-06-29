@@ -24,33 +24,41 @@ const (
 )
 
 func New(cfg LogConfig) zerolog.Logger {
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
 	zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
 
 	switch cfg.Environment {
 	case "production":
-		return zerolog.New(os.Stdout).Level(logLevelToZero(cfg.LogLevel)).With().Timestamp().Logger()
+		return zerolog.New(os.Stdout).
+			Level(logLevelToZero(cfg.LogLevel)).
+			With().
+			Timestamp().
+			Logger()
 	default:
 		return zerolog.New(zerolog.NewConsoleWriter(func(w *zerolog.ConsoleWriter) {
 			w.TimeFormat = "03:04:05.000PM"
-		})).Level(logLevelToZero(cfg.LogLevel)).With().Timestamp().Logger()
+		})).
+			Level(logLevelToZero(cfg.LogLevel)).
+			With().
+			Timestamp().
+			Logger()
 	}
 }
 
 func logLevelToZero(level Level) zerolog.Level {
 	switch level {
-	case TRACE:
-		return zerolog.TraceLevel
-	case DEBUG:
-		return zerolog.DebugLevel
-	case INFO:
-		return zerolog.InfoLevel
-	case WARN:
-		return zerolog.WarnLevel
-	case ERROR:
-		return zerolog.ErrorLevel
 	case PANIC:
 		return zerolog.PanicLevel
+	case ERROR:
+		return zerolog.ErrorLevel
+	case WARN:
+		return zerolog.WarnLevel
+	case INFO:
+		return zerolog.InfoLevel
+	case DEBUG:
+		return zerolog.DebugLevel
+	case TRACE:
+		return zerolog.TraceLevel
 	default:
 		return zerolog.InfoLevel
 	}

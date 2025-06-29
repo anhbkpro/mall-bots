@@ -8,8 +8,8 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "mallbots" <<-EOSQL
   (
       id              text NOT NULL,
       order_id        text NOT NULL,
-      items           bytea NOT NULL,
-      assigned_bot_id text NULL,
+      stops           bytea NOT NULL,
+      assigned_bot_id text NOT NULL,
       status          text NOT NULL,
       created_at      timestamptz NOT NULL DEFAULT NOW(),
       updated_at      timestamptz NOT NULL DEFAULT NOW(),

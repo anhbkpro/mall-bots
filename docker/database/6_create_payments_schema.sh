@@ -9,8 +9,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "mallbots" <<-EOSQL
     id          text NOT NULL,
     customer_id text NOT NULL,
     amount      decimal(9, 4) NOT NULL,
-    currency    text NOT NULL DEFAULT 'USD',
-    status      text NOT NULL,
     created_at  timestamptz NOT NULL DEFAULT NOW(),
     updated_at  timestamptz NOT NULL DEFAULT NOW(),
     PRIMARY KEY (id)

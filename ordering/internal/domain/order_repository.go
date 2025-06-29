@@ -1,9 +1,10 @@
 package domain
 
-import "context"
+import (
+	"context"
+)
 
 type OrderRepository interface {
-	Find(ctx context.Context, id string) (*Order, error)
+	Load(ctx context.Context, orderID string) (*Order, error)
 	Save(ctx context.Context, order *Order) error
-	Update(ctx context.Context, order *Order) error
 }

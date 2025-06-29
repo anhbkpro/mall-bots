@@ -2,10 +2,8 @@ package commands
 
 import (
 	"context"
-	"eda-in-golang/internal/ddd"
-	"eda-in-golang/ordering/internal/domain"
 
-	"github.com/stackus/errors"
+	"eda-in-golang/ordering/internal/domain"
 )
 
 type CompleteOrder struct {
@@ -14,31 +12,28 @@ type CompleteOrder struct {
 }
 
 type CompleteOrderHandler struct {
-	orderRepo       domain.OrderRepository
-	domainPublisher ddd.EventPublisher
+	orders domain.OrderRepository
 }
 
-func NewCompleteOrderHandler(orderRepo domain.OrderRepository, domainPublisher ddd.EventPublisher) CompleteOrderHandler {
-	return CompleteOrderHandler{orderRepo: orderRepo, domainPublisher: domainPublisher}
+func NewCompleteOrderHandler(orders domain.OrderRepository) CompleteOrderHandler {
+	return CompleteOrderHandler{
+		orders: orders,
+	}
 }
 
 func (h CompleteOrderHandler) CompleteOrder(ctx context.Context, cmd CompleteOrder) error {
-	order, err := h.orderRepo.Find(ctx, cmd.ID)
+	order, err := h.orders.Load(ctx, cmd.ID)
 	if err != nil {
-		return errors.Wrap(err, "find order")
+		return err
 	}
 
-	if err := order.Complete(cmd.InvoiceID); err != nil {
-		return errors.Wrap(err, "complete order")
+	err = order.Complete(cmd.InvoiceID)
+	if err != nil {
+		return nil
 	}
 
-	if err = h.orderRepo.Update(ctx, order); err != nil {
-		return errors.Wrap(err, "update order")
-	}
-
-	// publish order completed event
-	if err = h.domainPublisher.Publish(ctx, order.GetEvents()...); err != nil {
-		return errors.Wrap(err, "publish order completed event")
+	if err = h.orders.Save(ctx, order); err != nil {
+		return err
 	}
 
 	return nil

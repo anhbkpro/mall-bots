@@ -2,44 +2,54 @@ package commands
 
 import (
 	"context"
-	"eda-in-golang/internal/ddd"
-	"eda-in-golang/stores/internal/domain"
+	"log"
 
-	"github.com/pkg/errors"
+	"eda-in-golang/stores/internal/domain"
 )
 
 type (
-	// Command type (DTO)
-	CreateStore struct {
+	CreateStoreCmd struct {
 		ID       string
 		Name     string
 		Location string
 	}
 
-	// Command handler
 	CreateStoreHandler struct {
-		stores          domain.StoreRepository
-		domainPublisher ddd.EventPublisher
+		stores domain.StoreRepository // concrete implementation: es.AggregateRepository[*domain.Store] => see module.go
 	}
 )
 
-func NewCreateStoreHandler(stores domain.StoreRepository, domainPublisher ddd.EventPublisher) CreateStoreHandler {
-	return CreateStoreHandler{stores: stores, domainPublisher: domainPublisher}
+func NewCreateStoreHandler(stores domain.StoreRepository) CreateStoreHandler {
+	return CreateStoreHandler{
+		stores: stores,
+	}
 }
 
-func (h CreateStoreHandler) CreateStore(ctx context.Context, cmd CreateStore) error {
-	store, err := domain.CreateStore(cmd.ID, cmd.Name, cmd.Location)
+// CreateStore is the command handler for creating a store
+func (h CreateStoreHandler) CreateStore(ctx context.Context, cmd CreateStoreCmd) error {
+	log.Printf("CreateStore: Starting to create store with ID=%s, Name=%s, Location=%s", cmd.ID, cmd.Name, cmd.Location)
+
+	// store is an implementation of es.EventSourcedAggregate
+	store, err := domain.CreateStore(cmd.ID, cmd.Name, cmd.Location) // create the store aggregate
 	if err != nil {
-		return errors.Wrap(err, "failed to create store")
+		log.Printf("CreateStore: Failed to create store domain object: %v", err)
+		return err
 	}
 
-	if err := h.stores.Save(ctx, store); err != nil {
-		return errors.Wrap(err, "failed to save store")
+	log.Printf("CreateStore: Successfully created store domain object with ID=%s", store.ID())
+
+	// domain.StoreRepository interface (es.AggregateRepository[*domain.Store] implements the domain.StoreRepository interface)
+	// h.stores.Save(ctx, store) = domain.StoreRepository.Save(ctx, store)
+	// => es.AggregateRepository[*domain.Store].Save(ctx, store)
+	// => es.AggregateStore.Save(ctx, aggregate)
+	// => postgres.EventStore.Save(ctx, aggregate)
+
+	err = h.stores.Save(ctx, store) // save the store aggregate to the event store
+	if err != nil {
+		log.Printf("CreateStore: Failed to save store to repository: %v", err)
+		return err
 	}
 
-	if err := h.domainPublisher.Publish(ctx, store.GetEvents()...); err != nil {
-		return errors.Wrap(err, "failed to publish domain event")
-	}
-
+	log.Printf("CreateStore: Successfully saved store with ID=%s to repository", store.ID())
 	return nil
 }

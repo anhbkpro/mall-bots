@@ -40,13 +40,13 @@ type (
 
 	Application struct {
 		customers       domain.CustomerRepository
-		domainPublisher ddd.EventPublisher
+		domainPublisher ddd.EventPublisher[ddd.AggregateEvent]
 	}
 )
 
 var _ App = (*Application)(nil)
 
-func New(customers domain.CustomerRepository, domainPublisher ddd.EventPublisher) Application {
+func New(customers domain.CustomerRepository, domainPublisher ddd.EventPublisher[ddd.AggregateEvent]) Application {
 	return Application{
 		customers:       customers,
 		domainPublisher: domainPublisher,
@@ -54,7 +54,7 @@ func New(customers domain.CustomerRepository, domainPublisher ddd.EventPublisher
 }
 
 func (a Application) RegisterCustomer(ctx context.Context, cmd RegisterCustomer) error {
-	customer, err := domain.NewCustomer(cmd.ID, cmd.Name, cmd.SmsNumber)
+	customer, err := domain.RegisterCustomer(cmd.ID, cmd.Name, cmd.SmsNumber)
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func (a Application) RegisterCustomer(ctx context.Context, cmd RegisterCustomer)
 	}
 
 	// publish events to the domain event bus
-	if err := a.domainPublisher.Publish(ctx, customer.GetEvents()...); err != nil {
+	if err := a.domainPublisher.Publish(ctx, customer.Events()...); err != nil {
 		return err
 	}
 
@@ -82,7 +82,7 @@ func (a Application) AuthorizeCustomer(ctx context.Context, cmd AuthorizeCustome
 	}
 
 	// publish events to the domain event bus
-	if err := a.domainPublisher.Publish(ctx, customer.GetEvents()...); err != nil {
+	if err := a.domainPublisher.Publish(ctx, customer.Events()...); err != nil {
 		return err
 	}
 
@@ -107,7 +107,7 @@ func (a Application) EnableCustomer(ctx context.Context, cmd EnableCustomer) err
 		return err
 	}
 
-	if err := a.domainPublisher.Publish(ctx, customer.GetEvents()...); err != nil {
+	if err := a.domainPublisher.Publish(ctx, customer.Events()...); err != nil {
 		return err
 	}
 
@@ -128,7 +128,7 @@ func (a Application) DisableCustomer(ctx context.Context, cmd DisableCustomer) e
 		return err
 	}
 
-	if err := a.domainPublisher.Publish(ctx, customer.GetEvents()...); err != nil {
+	if err := a.domainPublisher.Publish(ctx, customer.Events()...); err != nil {
 		return err
 	}
 

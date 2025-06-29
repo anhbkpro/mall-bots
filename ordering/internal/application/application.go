@@ -2,7 +2,7 @@ package application
 
 import (
 	"context"
-	"eda-in-golang/internal/ddd"
+
 	"eda-in-golang/ordering/internal/application/commands"
 	"eda-in-golang/ordering/internal/application/queries"
 	"eda-in-golang/ordering/internal/domain"
@@ -15,8 +15,8 @@ type (
 	}
 	Commands interface {
 		CreateOrder(ctx context.Context, cmd commands.CreateOrder) error
-		ReadyOrder(ctx context.Context, cmd commands.ReadyOrder) error
 		CancelOrder(ctx context.Context, cmd commands.CancelOrder) error
+		ReadyOrder(ctx context.Context, cmd commands.ReadyOrder) error
 		CompleteOrder(ctx context.Context, cmd commands.CompleteOrder) error
 	}
 	Queries interface {
@@ -27,11 +27,10 @@ type (
 		appCommands
 		appQueries
 	}
-
 	appCommands struct {
 		commands.CreateOrderHandler
-		commands.ReadyOrderHandler
 		commands.CancelOrderHandler
+		commands.ReadyOrderHandler
 		commands.CompleteOrderHandler
 	}
 	appQueries struct {
@@ -41,16 +40,18 @@ type (
 
 var _ App = (*Application)(nil)
 
-func New(orderRepo domain.OrderRepository, customerRepo domain.CustomerRepository, paymentRepo domain.PaymentRepository, shoppingRepo domain.ShoppingRepository, domainPublisher ddd.EventPublisher) *Application {
+func New(orders domain.OrderRepository, customers domain.CustomerRepository, payments domain.PaymentRepository,
+	shopping domain.ShoppingRepository,
+) *Application {
 	return &Application{
 		appCommands: appCommands{
-			CreateOrderHandler:   commands.NewCreateOrderHandler(orderRepo, customerRepo, paymentRepo, shoppingRepo, domainPublisher),
-			ReadyOrderHandler:    commands.NewReadyOrderHandler(orderRepo, domainPublisher),
-			CancelOrderHandler:   commands.NewCancelOrderHandler(orderRepo, shoppingRepo, domainPublisher),
-			CompleteOrderHandler: commands.NewCompleteOrderHandler(orderRepo, domainPublisher),
+			CreateOrderHandler:   commands.NewCreateOrderHandler(orders, customers, payments, shopping),
+			CancelOrderHandler:   commands.NewCancelOrderHandler(orders, shopping),
+			ReadyOrderHandler:    commands.NewReadyOrderHandler(orders),
+			CompleteOrderHandler: commands.NewCompleteOrderHandler(orders),
 		},
 		appQueries: appQueries{
-			GetOrderHandler: queries.NewGetOrderHandler(orderRepo),
+			GetOrderHandler: queries.NewGetOrderHandler(orders),
 		},
 	}
 }

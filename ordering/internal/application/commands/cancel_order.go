@@ -2,10 +2,8 @@ package commands
 
 import (
 	"context"
-	"eda-in-golang/internal/ddd"
-	"eda-in-golang/ordering/internal/domain"
 
-	"github.com/stackus/errors"
+	"eda-in-golang/ordering/internal/domain"
 )
 
 type CancelOrder struct {
@@ -13,40 +11,33 @@ type CancelOrder struct {
 }
 
 type CancelOrderHandler struct {
-	orderRepo       domain.OrderRepository
-	shoppingRepo    domain.ShoppingRepository
-	domainPublisher ddd.EventPublisher
+	orders   domain.OrderRepository
+	shopping domain.ShoppingRepository
 }
 
-func NewCancelOrderHandler(orderRepo domain.OrderRepository, shoppingRepo domain.ShoppingRepository, domainPublisher ddd.EventPublisher) CancelOrderHandler {
+func NewCancelOrderHandler(orders domain.OrderRepository, shopping domain.ShoppingRepository) CancelOrderHandler {
 	return CancelOrderHandler{
-		orderRepo:       orderRepo,
-		shoppingRepo:    shoppingRepo,
-		domainPublisher: domainPublisher,
+		orders:   orders,
+		shopping: shopping,
 	}
 }
 
 func (h CancelOrderHandler) CancelOrder(ctx context.Context, cmd CancelOrder) error {
-	order, err := h.orderRepo.Find(ctx, cmd.ID)
+	order, err := h.orders.Load(ctx, cmd.ID)
 	if err != nil {
-		return errors.Wrap(err, "find order")
+		return err
 	}
 
 	if err = order.Cancel(); err != nil {
-		return errors.Wrap(err, "cancel order")
+		return err
 	}
 
-	if err = h.shoppingRepo.Cancel(ctx, order.ShoppingID); err != nil {
-		return errors.Wrap(err, "cancel shopping")
+	if err = h.shopping.Cancel(ctx, order.ShoppingID); err != nil {
+		return err
 	}
 
-	if err = h.orderRepo.Update(ctx, order); err != nil {
-		return errors.Wrap(err, "update order")
-	}
-
-	// publish order canceled event
-	if err = h.domainPublisher.Publish(ctx, order.GetEvents()...); err != nil {
-		return errors.Wrap(err, "publish order canceled event")
+	if err = h.orders.Save(ctx, order); err != nil {
+		return err
 	}
 
 	return nil

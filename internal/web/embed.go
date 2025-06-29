@@ -1,6 +1,8 @@
 package web
 
-import "embed"
+import (
+	"embed"
+)
 
 //go:embed swagger-ui/*
 //go:embed index.html

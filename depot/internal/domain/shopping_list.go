@@ -6,6 +6,8 @@ import (
 	"eda-in-golang/internal/ddd"
 )
 
+const ShoppingListAggregate = "depot.ShoppingList"
+
 var (
 	ErrShoppingCannotBeCanceled  = errors.Wrap(errors.ErrBadRequest, "the shopping list cannot be canceled")
 	ErrShoppingCannotBeAssigned  = errors.Wrap(errors.ErrBadRequest, "the shopping list cannot be assigned")
@@ -13,38 +15,44 @@ var (
 )
 
 type ShoppingList struct {
-	ddd.AggregateBase
+	ddd.Aggregate
 	OrderID       string
-	Items         []*Item
+	Stops         Stops
 	AssignedBotID string
 	Status        ShoppingListStatus
 }
 
-func CreateShopping(id, orderID string) *ShoppingList {
-	shoppingList := &ShoppingList{
-		AggregateBase: ddd.AggregateBase{
-			ID: id,
-		},
-		OrderID: orderID,
-		Status:  ShoppingListIsAvailable,
-		Items:   make([]*Item, 0),
+func NewShoppingList(id string) *ShoppingList {
+	return &ShoppingList{
+		Aggregate: ddd.NewAggregate(id, ShoppingListAggregate),
 	}
+}
 
-	shoppingList.AddEvent(&ShoppingListCreated{
+func CreateShopping(id, orderID string) *ShoppingList {
+	shoppingList := NewShoppingList(id)
+	shoppingList.OrderID = orderID
+	shoppingList.Status = ShoppingListIsAvailable
+	shoppingList.Stops = make(Stops)
+
+	shoppingList.AddEvent(ShoppingListCreatedEvent, &ShoppingListCreated{
 		ShoppingList: shoppingList,
 	})
 
 	return shoppingList
 }
 
-func (sl *ShoppingList) AddItem(productID string, quantity int) error {
-	item := &Item{
-		ProductName: productID, // This will be resolved to actual product name
-		Quantity:    quantity,
+func (ShoppingList) Key() string { return ShoppingListAggregate }
+
+func (sl *ShoppingList) AddItem(store *Store, product *Product, quantity int) error {
+	if _, exists := sl.Stops[store.ID]; !exists {
+		sl.Stops[store.ID] = &Stop{
+			StoreName:     store.Name,
+			StoreLocation: store.Location,
+			Items:         make(Items),
+		}
 	}
 
-	sl.Items = append(sl.Items, item)
-	return nil
+	return sl.Stops[store.ID].AddItem(product, quantity)
 }
 
 func (sl ShoppingList) isCancelable() bool {
@@ -63,7 +71,7 @@ func (sl *ShoppingList) Cancel() error {
 
 	sl.Status = ShoppingListIsCanceled
 
-	sl.AddEvent(&ShoppingListCanceled{
+	sl.AddEvent(ShoppingListCanceledEvent, &ShoppingListCanceled{
 		ShoppingList: sl,
 	})
 
@@ -82,7 +90,7 @@ func (sl *ShoppingList) Assign(id string) error {
 	sl.AssignedBotID = id
 	sl.Status = ShoppingListIsAssigned
 
-	sl.AddEvent(&ShoppingListAssigned{
+	sl.AddEvent(ShoppingListAssignedEvent, &ShoppingListAssigned{
 		ShoppingList: sl,
 		BotID:        id,
 	})
@@ -101,7 +109,7 @@ func (sl *ShoppingList) Complete() error {
 
 	sl.Status = ShoppingListIsCompleted
 
-	sl.AddEvent(&ShoppingListCompleted{
+	sl.AddEvent(ShoppingListCompletedEvent, &ShoppingListCompleted{
 		ShoppingList: sl,
 	})
 

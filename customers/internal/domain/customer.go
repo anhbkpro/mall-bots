@@ -6,8 +6,10 @@ import (
 	"github.com/stackus/errors"
 )
 
+const CustomerAggregate = "customers.CustomerAggregate"
+
 type Customer struct {
-	ddd.AggregateBase
+	ddd.Aggregate
 	Name      string
 	SmsNumber string
 	Enabled   bool
@@ -15,38 +17,43 @@ type Customer struct {
 
 var (
 	ErrNameCannotBeBlank       = errors.Wrap(errors.ErrBadRequest, "the customer name cannot be blank")
-	ErrCustomerIDCannotBeBlank = errors.Wrap(errors.ErrBadRequest, "the customer ID cannot be blank")
+	ErrCustomerIDCannotBeBlank = errors.Wrap(errors.ErrBadRequest, "the customer id cannot be blank")
 	ErrSmsNumberCannotBeBlank  = errors.Wrap(errors.ErrBadRequest, "the SMS number cannot be blank")
 	ErrCustomerAlreadyEnabled  = errors.Wrap(errors.ErrBadRequest, "the customer is already enabled")
 	ErrCustomerAlreadyDisabled = errors.Wrap(errors.ErrBadRequest, "the customer is already disabled")
-	ErrCustomerNotAuthorized   = errors.Wrap(errors.ErrUnauthorized, "the customer is not authorized")
+	ErrCustomerNotAuthorized   = errors.Wrap(errors.ErrUnauthorized, "customer is not authorized")
 )
 
-func NewCustomer(id, name, smsNumber string) (*Customer, error) {
-	if name == "" {
-		return nil, ErrNameCannotBeBlank
+func NewCustomer(id string) *Customer {
+	return &Customer{
+		Aggregate: ddd.NewAggregate(id, CustomerAggregate),
 	}
+}
 
+func RegisterCustomer(id, name, smsNumber string) (*Customer, error) {
 	if id == "" {
 		return nil, ErrCustomerIDCannotBeBlank
+	}
+
+	if name == "" {
+		return nil, ErrNameCannotBeBlank
 	}
 
 	if smsNumber == "" {
 		return nil, ErrSmsNumberCannotBeBlank
 	}
 
-	customer := &Customer{
-		AggregateBase: ddd.AggregateBase{
-			ID: id,
-		},
-		Name:      name,
-		SmsNumber: smsNumber,
-		Enabled:   true,
-	}
-
-	customer.AddEvent(&CustomerRegistered{Customer: customer})
+	customer := NewCustomer(id)
+	customer.Name = name
+	customer.SmsNumber = smsNumber
+	customer.Enabled = true
+	customer.AddEvent(CustomerRegisteredEvent, &CustomerRegistered{Customer: customer})
 
 	return customer, nil
+}
+
+func (Customer) Key() string {
+	return CustomerAggregate
 }
 
 func (c *Customer) Authorize() error {
@@ -54,7 +61,7 @@ func (c *Customer) Authorize() error {
 		return ErrCustomerNotAuthorized
 	}
 
-	c.AddEvent(&CustomerAuthorized{Customer: c})
+	c.AddEvent(CustomerAuthorizedEvent, &CustomerAuthorized{Customer: c})
 
 	return nil
 }
@@ -65,7 +72,7 @@ func (c *Customer) Enable() error {
 	}
 
 	c.Enabled = true
-	c.AddEvent(&CustomerEnabled{Customer: c})
+	c.AddEvent(CustomerEnabledEvent, &CustomerEnabled{Customer: c})
 
 	return nil
 }
@@ -76,7 +83,7 @@ func (c *Customer) Disable() error {
 	}
 
 	c.Enabled = false
-	c.AddEvent(&CustomerDisabled{Customer: c})
+	c.AddEvent(CustomerDisabledEvent, &CustomerDisabled{Customer: c})
 
 	return nil
 }

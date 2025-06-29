@@ -3,30 +3,30 @@ package domain
 type BasketStatus string
 
 const (
-	BasketStatusUnknown    BasketStatus = ""
-	BasketStatusOpen       BasketStatus = "open"
-	BasketStatusCanceled   BasketStatus = "canceled"
-	BasketStatusCheckedOut BasketStatus = "checked_out"
+	BasketUnknown      BasketStatus = ""
+	BasketIsOpen       BasketStatus = "open"
+	BasketIsCanceled   BasketStatus = "canceled"
+	BasketIsCheckedOut BasketStatus = "checked_out"
 )
 
 func (s BasketStatus) String() string {
 	switch s {
-	case BasketStatusOpen, BasketStatusCanceled, BasketStatusCheckedOut:
+	case BasketIsOpen, BasketIsCanceled, BasketIsCheckedOut:
 		return string(s)
 	default:
-		return string(BasketStatusUnknown)
+		return string(BasketUnknown)
 	}
 }
 
 func ToBasketStatus(s string) BasketStatus {
 	switch s {
-	case BasketStatusOpen.String():
-		return BasketStatusOpen
-	case BasketStatusCanceled.String():
-		return BasketStatusCanceled
-	case BasketStatusCheckedOut.String():
-		return BasketStatusCheckedOut
+	case BasketIsOpen.String():
+		return BasketIsOpen
+	case BasketIsCanceled.String():
+		return BasketIsCanceled
+	case BasketIsCheckedOut.String():
+		return BasketIsCheckedOut
 	default:
-		return BasketStatusUnknown
+		return BasketUnknown
 	}
 }

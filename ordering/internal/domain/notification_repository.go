@@ -1,6 +1,8 @@
 package domain
 
-import "context"
+import (
+	"context"
+)
 
 type NotificationRepository interface {
 	NotifyOrderCreated(ctx context.Context, orderID, customerID string) error

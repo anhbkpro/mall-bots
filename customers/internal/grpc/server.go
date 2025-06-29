@@ -83,7 +83,7 @@ func (s server) DisableCustomer(ctx context.Context, req *customerspb.DisableCus
 
 func (s server) customerFromDomain(customer *domain.Customer) *customerspb.Customer {
 	return &customerspb.Customer{
-		Id:        customer.ID,
+		Id:        customer.ID(),
 		Name:      customer.Name,
 		SmsNumber: customer.SmsNumber,
 		Enabled:   customer.Enabled,

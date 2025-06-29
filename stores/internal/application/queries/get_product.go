@@ -2,25 +2,22 @@ package queries
 
 import (
 	"context"
+
 	"eda-in-golang/stores/internal/domain"
 )
 
-type (
-	// Query type (DTO)
-	GetProduct struct {
-		ID string
-	}
-
-	// Query handler
-	GetProductHandler struct {
-		products domain.ProductRepository
-	}
-)
-
-func NewGetProductHandler(products domain.ProductRepository) GetProductHandler {
-	return GetProductHandler{products: products}
+type GetProduct struct {
+	ID string
 }
 
-func (h GetProductHandler) GetProduct(ctx context.Context, query GetProduct) (*domain.Product, error) {
-	return h.products.Find(ctx, query.ID)
+type GetProductHandler struct {
+	catalog domain.CatalogRepository
+}
+
+func NewGetProductHandler(catalog domain.CatalogRepository) GetProductHandler {
+	return GetProductHandler{catalog: catalog}
+}
+
+func (h GetProductHandler) GetProduct(ctx context.Context, query GetProduct) (*domain.CatalogProduct, error) {
+	return h.catalog.Find(ctx, query.ID)
 }

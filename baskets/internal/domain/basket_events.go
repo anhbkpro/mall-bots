@@ -1,48 +1,61 @@
 package domain
 
+const (
+	BasketStartedEvent     = "baskets.BasketStarted"
+	BasketItemAddedEvent   = "baskets.BasketItemAdded"
+	BasketItemRemovedEvent = "baskets.BasketItemRemoved"
+	BasketCanceledEvent    = "baskets.BasketCanceled"
+	BasketCheckedOutEvent  = "baskets.BasketCheckedOut"
+)
+
 type BasketStarted struct {
-	Basket *Basket
+	CustomerID string
 }
 
-// BasketStarted implements the Event interface.
-func (BasketStarted) EventName() string {
-	return "baskets.BasketStarted"
+// BasketStarted implements the registry.Registrable interface
+// => to be able to register the event with the registry.
+func (BasketStarted) Key() string {
+	return BasketStartedEvent
 }
 
 type BasketItemAdded struct {
-	Basket *Basket
-	Item   Item
+	Item Item
 }
 
-// BasketItemAdded implements the Event interface.
-func (BasketItemAdded) EventName() string {
-	return "baskets.BasketItemAdded"
+// BasketItemAdded implements the registry.Registrable interface
+// => to be able to register the event with the registry.
+func (BasketItemAdded) Key() string {
+	return BasketItemAddedEvent
 }
 
 type BasketItemRemoved struct {
-	Basket *Basket
-	Item   Item
+	ProductID string
+	Quantity  int
 }
 
-// BasketItemRemoved implements the Event interface.
-func (BasketItemRemoved) EventName() string {
-	return "baskets.BasketItemRemoved"
+// BasketItemRemoved implements the registry.Registrable interface
+// => to be able to register the event with the registry.
+func (BasketItemRemoved) Key() string {
+	return BasketItemRemovedEvent
 }
 
 type BasketCanceled struct {
-	Basket *Basket
 }
 
-// BasketCanceled implements the Event interface.
-func (BasketCanceled) EventName() string {
-	return "baskets.BasketCanceled"
+// BasketCanceled implements the registry.Registrable interface
+// => to be able to register the event with the registry.
+func (BasketCanceled) Key() string {
+	return BasketCanceledEvent
 }
 
 type BasketCheckedOut struct {
-	Basket *Basket
+	PaymentID  string
+	CustomerID string
+	Items      map[string]Item
 }
 
-// BasketCheckedOut implements the Event interface, so it is a valid event key in the event dispatcher
-func (BasketCheckedOut) EventName() string {
-	return "baskets.BasketCheckedOut"
+// BasketCheckedOut implements the registry.Registrable interface
+// => to be able to register the event with the registry.
+func (BasketCheckedOut) Key() string {
+	return BasketCheckedOutEvent
 }

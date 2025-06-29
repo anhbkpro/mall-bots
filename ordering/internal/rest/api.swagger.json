@@ -52,7 +52,7 @@
     },
     "/api/ordering/{id}": {
       "get": {
-        "summary": "Get an order",
+        "summary": "Get na order",
         "operationId": "getOrder",
         "responses": {
           "200": {
@@ -124,7 +124,6 @@
         "items": {
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/orderingpbItem"
           }
         },
@@ -192,7 +191,6 @@
         "items": {
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/orderingpbItem"
           }
         },
@@ -226,7 +224,6 @@
         "details": {
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
         }

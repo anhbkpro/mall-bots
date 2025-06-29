@@ -1,60 +1,80 @@
 package domain
 
 import (
+	"github.com/stackus/errors"
+
 	"eda-in-golang/internal/ddd"
-	"errors"
+	"eda-in-golang/internal/es"
 )
+
+const StoreAggregate = "stores.Store"
 
 var (
-	ErrStoreNameIsBlank               = errors.New("store name cannot be blank")
-	ErrStoreLocationIsBlank           = errors.New("store location cannot be blank")
-	ErrStoreIsAlreadyParticipating    = errors.New("store is already participating")
-	ErrStoreIsAlreadyNotParticipating = errors.New("store is not participating")
+	ErrStoreNameIsBlank               = errors.Wrap(errors.ErrBadRequest, "the store name cannot be blank")
+	ErrStoreLocationIsBlank           = errors.Wrap(errors.ErrBadRequest, "the store location cannot be blank")
+	ErrStoreIsAlreadyParticipating    = errors.Wrap(errors.ErrBadRequest, "the store is already participating")
+	ErrStoreIsAlreadyNotParticipating = errors.Wrap(errors.ErrBadRequest, "the store is already not participating")
 )
 
+// ddd.Store is an implementation of es.EventSourcedAggregate
 type Store struct {
-	ddd.AggregateBase
+	es.Aggregate
 	Name          string
 	Location      string
 	Participating bool
 }
 
-func CreateStore(id, name, location string) (store *Store, err error) {
+var _ interface {
+	es.EventApplier
+	es.Snapshotter
+} = (*Store)(nil)
+
+// NewStore creates a new store aggregate with the given id and name
+func NewStore(id string) *Store {
+	return &Store{
+		Aggregate: es.NewAggregate(id, StoreAggregate),
+	}
+}
+
+func CreateStore(id, name, location string) (*Store, error) {
 	if name == "" {
 		return nil, ErrStoreNameIsBlank
 	}
+
 	if location == "" {
 		return nil, ErrStoreLocationIsBlank
 	}
 
-	store = &Store{
-		AggregateBase: ddd.AggregateBase{
-			ID: id,
-		},
-		Name:          name,
-		Location:      location,
-		Participating: false,
-	}
+	// what happens here?
+	// 1. create a new store aggregate
+	// 2. add a new event to the store aggregate
+	// 3. return the store aggregate
+	store := NewStore(id)
 
-	store.AddEvent(&StoreCreated{
-		Store: store,
+	// 4. the event will be applied to the store aggregate (ApplyEvent)
+	// 5. the store aggregate will be saved to the event store (AggregateRepository.Save)
+	// 6. the store aggregate will be saved to the database (AggregateRepository.Save)
+	store.AddEvent(StoreCreatedEvent, &StoreCreated{
+		Name:     name,
+		Location: location,
 	})
 
-	return
+	return store, nil
 }
+
+// Key implements registry.Registerable
+func (Store) Key() string { return StoreAggregate }
 
 func (s *Store) EnableParticipation() (err error) {
 	if s.Participating {
 		return ErrStoreIsAlreadyParticipating
 	}
 
-	s.Participating = true
-
-	s.AddEvent(&StoreParticipationEnabled{
-		Store: s,
+	s.AddEvent(StoreParticipationEnabledEvent, &StoreParticipationToggled{
+		Participating: true,
 	})
 
-	return nil
+	return
 }
 
 func (s *Store) DisableParticipation() (err error) {
@@ -62,11 +82,61 @@ func (s *Store) DisableParticipation() (err error) {
 		return ErrStoreIsAlreadyNotParticipating
 	}
 
-	s.Participating = false
+	s.AddEvent(StoreParticipationDisabledEvent, &StoreParticipationToggled{
+		Participating: false,
+	})
 
-	s.AddEvent(&StoreParticipationDisabled{
-		Store: s,
+	return
+}
+
+func (s *Store) Rebrand(name string) error {
+	s.AddEvent(StoreRebrandedEvent, &StoreRebranded{
+		Name: name,
 	})
 
 	return nil
+}
+
+// ApplyEvent implements es.EventApplier
+func (s *Store) ApplyEvent(event ddd.Event) error {
+	switch payload := event.Payload().(type) {
+	case *StoreCreated:
+		s.Name = payload.Name
+		s.Location = payload.Location
+
+	case *StoreParticipationToggled:
+		s.Participating = payload.Participating
+
+	case *StoreRebranded:
+		s.Name = payload.Name
+
+	default:
+		return errors.ErrInternal.Msgf("%T received the event %s with unexpected payload %T", s, event.EventName(), payload)
+	}
+
+	return nil
+}
+
+// ApplySnapshot implements es.Snapshotter
+func (s *Store) ApplySnapshot(snapshot es.Snapshot) error {
+	switch ss := snapshot.(type) {
+	case *StoreV1:
+		s.Name = ss.Name
+		s.Location = ss.Location
+		s.Participating = ss.Participating
+
+	default:
+		return errors.ErrInternal.Msgf("%T received the unexpected snapshot %T", s, snapshot)
+	}
+
+	return nil
+}
+
+// ToSnapshot implements es.Snapshotter
+func (s Store) ToSnapshot() es.Snapshot {
+	return StoreV1{
+		Name:          s.Name,
+		Location:      s.Location,
+		Participating: s.Participating,
+	}
 }

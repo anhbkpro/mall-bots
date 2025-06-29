@@ -2,24 +2,20 @@ package queries
 
 import (
 	"context"
+
 	"eda-in-golang/stores/internal/domain"
 )
 
-type (
-	// Query type (DTO)
-	GetParticipatingStores struct {
-	}
+type GetParticipatingStores struct{}
 
-	// Query handler
-	GetParticipatingStoresHandler struct {
-		participatingStores domain.ParticipatingStoreRepository
-	}
-)
-
-func NewGetParticipatingStoresHandler(participatingStores domain.ParticipatingStoreRepository) GetParticipatingStoresHandler {
-	return GetParticipatingStoresHandler{participatingStores: participatingStores}
+type GetParticipatingStoresHandler struct {
+	mall domain.MallRepository
 }
 
-func (h GetParticipatingStoresHandler) GetParticipatingStores(ctx context.Context, query GetParticipatingStores) ([]*domain.Store, error) {
-	return h.participatingStores.FindAll(ctx)
+func NewGetParticipatingStoresHandler(mall domain.MallRepository) GetParticipatingStoresHandler {
+	return GetParticipatingStoresHandler{mall: mall}
+}
+
+func (h GetParticipatingStoresHandler) GetParticipatingStores(ctx context.Context, _ GetParticipatingStores) ([]*domain.MallStore, error) {
+	return h.mall.AllParticipating(ctx)
 }
