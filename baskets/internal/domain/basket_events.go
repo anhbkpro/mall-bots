@@ -10,43 +10,31 @@ const (
 
 type BasketStarted struct {
 	CustomerID string
+	// Basket *Basket
 }
 
-// BasketStarted implements the registry.Registrable interface
-// => to be able to register the event with the registry.
-func (BasketStarted) Key() string {
-	return BasketStartedEvent
-}
+// Key implements registry.Registerable
+func (BasketStarted) Key() string { return BasketStartedEvent }
 
 type BasketItemAdded struct {
 	Item Item
 }
 
-// BasketItemAdded implements the registry.Registrable interface
-// => to be able to register the event with the registry.
-func (BasketItemAdded) Key() string {
-	return BasketItemAddedEvent
-}
+// Key implements registry.Registerable
+func (BasketItemAdded) Key() string { return BasketItemAddedEvent }
 
 type BasketItemRemoved struct {
 	ProductID string
 	Quantity  int
 }
 
-// BasketItemRemoved implements the registry.Registrable interface
-// => to be able to register the event with the registry.
-func (BasketItemRemoved) Key() string {
-	return BasketItemRemovedEvent
-}
+// Key implements registry.Registerable
+func (BasketItemRemoved) Key() string { return BasketItemRemovedEvent }
 
-type BasketCanceled struct {
-}
+type BasketCanceled struct{}
 
-// BasketCanceled implements the registry.Registrable interface
-// => to be able to register the event with the registry.
-func (BasketCanceled) Key() string {
-	return BasketCanceledEvent
-}
+// Key implements registry.Registerable
+func (BasketCanceled) Key() string { return BasketCanceledEvent }
 
 type BasketCheckedOut struct {
 	PaymentID  string
@@ -54,8 +42,5 @@ type BasketCheckedOut struct {
 	Items      map[string]Item
 }
 
-// BasketCheckedOut implements the registry.Registrable interface
-// => to be able to register the event with the registry.
-func (BasketCheckedOut) Key() string {
-	return BasketCheckedOutEvent
-}
+// Key implements registry.Registerable
+func (BasketCheckedOut) Key() string { return BasketCheckedOutEvent }

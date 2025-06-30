@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	_ "github.com/jackc/pgx/v4/stdlib"
+	"github.com/nats-io/nats.go"
 	"github.com/rs/zerolog"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
@@ -34,6 +35,8 @@ import (
 type app struct {
 	cfg     config.AppConfig
 	db      *sql.DB
+	nc      *nats.Conn
+	js      nats.JetStreamContext
 	logger  zerolog.Logger
 	modules []monolith.Module
 	mux     *chi.Mux
@@ -47,6 +50,10 @@ func (a *app) Config() config.AppConfig {
 
 func (a *app) DB() *sql.DB {
 	return a.db
+}
+
+func (a *app) JS() nats.JetStreamContext {
+	return a.js
 }
 
 func (a *app) Logger() zerolog.Logger {
@@ -140,6 +147,26 @@ func (a *app) waitForRPC(ctx context.Context) error {
 	return group.Wait()
 }
 
+func (a *app) waitForStream(ctx context.Context) error {
+	closed := make(chan struct{})
+	a.nc.SetClosedHandler(func(nc *nats.Conn) {
+		close(closed)
+	})
+	group, gCtx := errgroup.WithContext(ctx)
+	group.Go(func() error {
+		fmt.Println("message stream started")
+		defer fmt.Println("message stream stopped")
+		<-closed
+		return nil
+	})
+	group.Go(func() error {
+		<-gCtx.Done()
+		fmt.Println("message stream to be shutdown")
+		return a.nc.Drain()
+	})
+	return group.Wait()
+}
+
 func main() {
 	if err := run(); err != nil {
 		fmt.Println(err.Error())
@@ -169,10 +196,18 @@ func run() (err error) {
 		}
 	}(m.db)
 	fmt.Println("✅ db initialized")
-	m.logger = logger.New(logger.LogConfig{
-		Environment: cfg.Environment,
-		LogLevel:    logger.Level(cfg.LogLevel),
-	})
+
+	// init nats & jetstream
+	m.nc, err = nats.Connect(cfg.Nats.URL)
+	if err != nil {
+		return err
+	}
+	m.js, err = initJetStream(cfg.Nats, m.nc)
+	if err != nil {
+		return err
+	}
+
+	m.logger = initLogger(cfg)
 	m.rpc = initRpc(cfg.Rpc)
 	m.mux = initMux(cfg.Web)
 	m.waiter = waiter.New(waiter.CatchSignals())
@@ -200,6 +235,7 @@ func run() (err error) {
 	m.waiter.Add(
 		m.waitForWeb,
 		m.waitForRPC,
+		m.waitForStream,
 	)
 
 	// Start the application
@@ -217,4 +253,28 @@ func initRpc(_ rpc.RpcConfig) *grpc.Server {
 
 func initMux(_ web.WebConfig) *chi.Mux {
 	return chi.NewMux()
+}
+
+func initJetStream(cfg config.NatsConfig, nc *nats.Conn) (js nats.JetStreamContext, err error) {
+	js, err = nc.JetStream()
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = js.AddStream(&nats.StreamConfig{
+		Name:     cfg.Stream,
+		Subjects: []string{fmt.Sprintf("%s.>", cfg.Stream)},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return js, nil
+}
+
+func initLogger(cfg config.AppConfig) zerolog.Logger {
+	return logger.New(logger.LogConfig{
+		Environment: cfg.Environment,
+		LogLevel:    logger.Level(cfg.LogLevel),
+	})
 }

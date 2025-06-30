@@ -2,10 +2,11 @@ package logging
 
 import (
 	"context"
-	"eda-in-golang/baskets/internal/application"
-	"eda-in-golang/baskets/internal/domain"
 
 	"github.com/rs/zerolog"
+
+	"eda-in-golang/baskets/internal/application"
+	"eda-in-golang/baskets/internal/domain"
 )
 
 type Application struct {
@@ -22,52 +23,38 @@ func LogApplicationAccess(application application.App, logger zerolog.Logger) Ap
 	}
 }
 
-func (a Application) StartBasket(ctx context.Context, cmd application.StartBasket) error {
+func (a Application) StartBasket(ctx context.Context, start application.StartBasket) (err error) {
 	a.logger.Info().Msg("--> Baskets.StartBasket")
-	defer func() {
-		a.logger.Info().Msg("<-- Baskets.StartBasket")
-	}()
-
-	return a.App.StartBasket(ctx, cmd)
+	defer func() { a.logger.Info().Err(err).Msg("<-- Baskets.StartBasket") }()
+	return a.App.StartBasket(ctx, start)
 }
 
-func (a Application) CancelBasket(ctx context.Context, cmd application.CancelBasket) error {
+func (a Application) CancelBasket(ctx context.Context, cancel application.CancelBasket) (err error) {
 	a.logger.Info().Msg("--> Baskets.CancelBasket")
-	defer func() {
-		a.logger.Info().Msg("<-- Baskets.CancelBasket")
-	}()
-
-	return a.App.CancelBasket(ctx, cmd)
+	defer func() { a.logger.Info().Err(err).Msg("<-- Baskets.CancelBasket") }()
+	return a.App.CancelBasket(ctx, cancel)
 }
 
-func (a Application) CheckoutBasket(ctx context.Context, cmd application.CheckoutBasket) error {
+func (a Application) CheckoutBasket(ctx context.Context, checkout application.CheckoutBasket) (err error) {
 	a.logger.Info().Msg("--> Baskets.CheckoutBasket")
-	defer func() {
-		a.logger.Info().Msg("<-- Baskets.CheckoutBasket")
-	}()
-	return a.App.CheckoutBasket(ctx, cmd)
+	defer func() { a.logger.Info().Err(err).Msg("<-- Baskets.CheckoutBasket") }()
+	return a.App.CheckoutBasket(ctx, checkout)
 }
 
-func (a Application) AddItem(ctx context.Context, cmd application.AddItem) error {
+func (a Application) AddItem(ctx context.Context, add application.AddItem) (err error) {
 	a.logger.Info().Msg("--> Baskets.AddItem")
-	defer func() {
-		a.logger.Info().Msg("<-- Baskets.AddItem")
-	}()
-	return a.App.AddItem(ctx, cmd)
+	defer func() { a.logger.Info().Err(err).Msg("<-- Baskets.AddItem") }()
+	return a.App.AddItem(ctx, add)
 }
 
-func (a Application) RemoveItem(ctx context.Context, cmd application.RemoveItem) error {
+func (a Application) RemoveItem(ctx context.Context, remove application.RemoveItem) (err error) {
 	a.logger.Info().Msg("--> Baskets.RemoveItem")
-	defer func() {
-		a.logger.Info().Msg("<-- Baskets.RemoveItem")
-	}()
-	return a.App.RemoveItem(ctx, cmd)
+	defer func() { a.logger.Info().Err(err).Msg("<-- Baskets.RemoveItem") }()
+	return a.App.RemoveItem(ctx, remove)
 }
 
-func (a Application) GetBasket(ctx context.Context, cmd application.GetBasket) (basket *domain.Basket, err error) {
+func (a Application) GetBasket(ctx context.Context, get application.GetBasket) (basket *domain.Basket, err error) {
 	a.logger.Info().Msg("--> Baskets.GetBasket")
-	defer func() {
-		a.logger.Info().Msg("<-- Baskets.GetBasket")
-	}()
-	return a.App.GetBasket(ctx, cmd)
+	defer func() { a.logger.Info().Err(err).Msg("<-- Baskets.GetBasket") }()
+	return a.App.GetBasket(ctx, get)
 }

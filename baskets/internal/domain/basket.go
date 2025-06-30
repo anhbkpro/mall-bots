@@ -1,10 +1,10 @@
 package domain
 
 import (
+	"github.com/stackus/errors"
+
 	"eda-in-golang/internal/ddd"
 	"eda-in-golang/internal/es"
-
-	"github.com/stackus/errors"
 )
 
 const BasketAggregate = "baskets.Basket"
@@ -19,7 +19,6 @@ var (
 	ErrCustomerIDCannotBeBlank  = errors.Wrap(errors.ErrBadRequest, "the customer id cannot be blank")
 )
 
-// Basket is the aggregate root for the basket domain.
 type Basket struct {
 	es.Aggregate
 	CustomerID string
@@ -51,20 +50,16 @@ func StartBasket(id, customerID string) (*Basket, error) {
 
 	basket := NewBasket(id)
 
-	// StartBasket triggers BasketStarted event
 	basket.AddEvent(BasketStartedEvent, &BasketStarted{
 		CustomerID: customerID,
 	})
 
 	return basket, nil
-
 }
 
-func (Basket) Key() string {
-	return BasketAggregate
-}
+func (Basket) Key() string { return BasketAggregate }
 
-func (b Basket) IsCancelable() bool {
+func (b Basket) IsCancellable() bool {
 	return b.Status == BasketIsOpen
 }
 
@@ -73,11 +68,10 @@ func (b Basket) IsOpen() bool {
 }
 
 func (b *Basket) Cancel() error {
-	if !b.IsCancelable() {
+	if !b.IsCancellable() {
 		return ErrBasketCannotBeCancelled
 	}
 
-	// Cancel triggers BasketCanceled event
 	b.AddEvent(BasketCanceledEvent, &BasketCanceled{})
 
 	return nil
@@ -96,10 +90,6 @@ func (b *Basket) Checkout(paymentID string) error {
 		return ErrPaymentIDCannotBeBlank
 	}
 
-	b.PaymentID = paymentID
-	b.Status = BasketIsCheckedOut
-
-	// Checkout triggers BasketCheckedOut event
 	b.AddEvent(BasketCheckedOutEvent, &BasketCheckedOut{
 		PaymentID:  paymentID,
 		CustomerID: b.CustomerID,
@@ -121,8 +111,8 @@ func (b *Basket) AddItem(store *Store, product *Product, quantity int) error {
 	b.AddEvent(BasketItemAddedEvent, &BasketItemAdded{
 		Item: Item{
 			StoreID:      store.ID,
-			StoreName:    store.Name,
 			ProductID:    product.ID,
+			StoreName:    store.Name,
 			ProductName:  product.Name,
 			ProductPrice: product.Price,
 			Quantity:     quantity,
@@ -167,10 +157,10 @@ func (b *Basket) ApplyEvent(event ddd.Event) error {
 
 	case *BasketItemRemoved:
 		if item, exists := b.Items[payload.ProductID]; exists {
-			item.Quantity -= payload.Quantity
-			if item.Quantity <= 0 {
+			if item.Quantity-payload.Quantity <= 1 {
 				delete(b.Items, payload.ProductID)
 			} else {
+				item.Quantity -= payload.Quantity
 				b.Items[payload.ProductID] = item
 			}
 		}
@@ -195,10 +185,11 @@ func (b *Basket) ApplySnapshot(snapshot es.Snapshot) error {
 	case *BasketV1:
 		b.CustomerID = ss.CustomerID
 		b.PaymentID = ss.PaymentID
-		b.Status = ss.Status
 		b.Items = ss.Items
+		b.Status = ss.Status
+
 	default:
-		return errors.ErrInternal.Msgf("%T received the snapshot %T", b, snapshot)
+		return errors.ErrInternal.Msgf("%T received the unexpected snapshot %T", b, snapshot)
 	}
 
 	return nil
@@ -208,7 +199,7 @@ func (b *Basket) ToSnapshot() es.Snapshot {
 	return &BasketV1{
 		CustomerID: b.CustomerID,
 		PaymentID:  b.PaymentID,
-		Status:     b.Status,
 		Items:      b.Items,
+		Status:     b.Status,
 	}
 }

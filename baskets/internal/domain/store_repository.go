@@ -1,6 +1,8 @@
 package domain
 
-import "context"
+import (
+	"context"
+)
 
 type StoreRepository interface {
 	Find(ctx context.Context, storeID string) (*Store, error)

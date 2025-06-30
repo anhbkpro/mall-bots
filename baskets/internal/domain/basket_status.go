@@ -14,12 +14,12 @@ func (s BasketStatus) String() string {
 	case BasketIsOpen, BasketIsCanceled, BasketIsCheckedOut:
 		return string(s)
 	default:
-		return string(BasketUnknown)
+		return ""
 	}
 }
 
-func ToBasketStatus(s string) BasketStatus {
-	switch s {
+func ToBasketStatus(status string) BasketStatus {
+	switch status {
 	case BasketIsOpen.String():
 		return BasketIsOpen
 	case BasketIsCanceled.String():

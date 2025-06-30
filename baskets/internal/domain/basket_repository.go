@@ -1,6 +1,8 @@
 package domain
 
-import "context"
+import (
+	"context"
+)
 
 type BasketRepository interface {
 	Load(ctx context.Context, basketID string) (*Basket, error)

@@ -2,9 +2,10 @@ package logging
 
 import (
 	"context"
-	"eda-in-golang/internal/ddd"
 
 	"github.com/rs/zerolog"
+
+	"eda-in-golang/internal/ddd"
 )
 
 type EventHandlers[T ddd.Event] struct {
