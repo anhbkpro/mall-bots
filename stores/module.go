@@ -75,6 +75,8 @@ func (m *Module) Startup(ctx context.Context, mono monolith.Monolith) error {
 	return nil
 }
 
+// The registrations function is responsible for registering domain aggregates and events with a JSON serde,
+// enabling serialization and deserialization operations.
 func registrations(reg registry.Registry) (err error) {
 	// 1. Create a new registry with the JSON serde
 	serde := serdes.NewJsonSerde(reg)
