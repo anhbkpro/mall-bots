@@ -3,8 +3,10 @@ package stores
 import (
 	"context"
 
+	"eda-in-golang/internal/am"
 	"eda-in-golang/internal/ddd"
 	"eda-in-golang/internal/es"
+	"eda-in-golang/internal/jetstream"
 	"eda-in-golang/internal/monolith"
 	pg "eda-in-golang/internal/postgres"
 	"eda-in-golang/internal/registry"
@@ -16,6 +18,7 @@ import (
 	"eda-in-golang/stores/internal/logging"
 	"eda-in-golang/stores/internal/postgres"
 	"eda-in-golang/stores/internal/rest"
+	"eda-in-golang/stores/storespb"
 )
 
 type Module struct {
@@ -28,6 +31,10 @@ func (m *Module) Startup(ctx context.Context, mono monolith.Monolith) error {
 	if err != nil {
 		return err
 	}
+	if err := storespb.Registrations(reg); err != nil {
+		return err
+	}
+	eventStream := am.NewEventStream(reg, jetstream.NewStream(mono.Config().Nats.Stream, mono.JS()))
 	domainDispatcher := ddd.NewEventDispatcher[ddd.AggregateEvent]()
 	aggregateStore := es.AggregateStoreWithMiddleware(
 		pg.NewEventStore("stores.events", mono.DB(), reg),       // es.AggregateStore implementation (event store)
@@ -56,6 +63,10 @@ func (m *Module) Startup(ctx context.Context, mono monolith.Monolith) error {
 		application.NewMallHandlers(mall),
 		"Mall", mono.Logger(),
 	)
+	integrationEventHandlers := logging.LogEventHandlerAccess(
+		application.NewIntegrationEventHandlers(eventStream),
+		"Integration", mono.Logger(),
+	)
 
 	// setup Driver adapters
 	if err := grpc.RegisterServer(ctx, app, mono.RPC()); err != nil {
@@ -71,6 +82,7 @@ func (m *Module) Startup(ctx context.Context, mono monolith.Monolith) error {
 	// to register mall handlers, we need to subscribe to the store created event
 	// so when a store is created (StoreCreatedEvent), the mall handlers (mallHandlers) will be called
 	handlers.RegisterMallHandlers(mallHandlers, domainDispatcher)
+	handlers.RegisterIntegrationEventHandlers(integrationEventHandlers, domainDispatcher)
 
 	return nil
 }
