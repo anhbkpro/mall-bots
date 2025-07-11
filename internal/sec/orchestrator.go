@@ -85,7 +85,16 @@ func (o orchestrator[T]) HandleReply(ctx context.Context, reply ddd.Reply) error
 }
 
 func (o orchestrator[T]) handle(ctx context.Context, sagaCtx *SagaContext[T], reply ddd.Reply) (stepResult[T], error) {
-	step := o.saga.getSteps()[sagaCtx.Step]
+	steps := o.saga.getSteps()
+
+	fmt.Printf("=== [Sec] Handling reply for saga step %d (total steps: %d)\n", sagaCtx.Step, len(steps))
+
+	// Check if the current step index is valid
+	if sagaCtx.Step < 0 || sagaCtx.Step >= len(steps) {
+		return stepResult[T]{}, errors.ErrInternal.Msgf("invalid step index: %d", sagaCtx.Step)
+	}
+
+	step := steps[sagaCtx.Step]
 
 	fmt.Println("=== [Sec] Handling reply:", reply.ReplyName())
 	err := step.handle(ctx, sagaCtx, reply)
@@ -112,7 +121,7 @@ func (o orchestrator[T]) handle(ctx context.Context, sagaCtx *SagaContext[T], re
 }
 
 func (o orchestrator[T]) execute(ctx context.Context, sagaCtx *SagaContext[T]) stepResult[T] {
-	fmt.Println("=== [Sec] Executing saga")
+	fmt.Printf("=== [Sec] Executing saga from step %d (compensating: %v)\n", sagaCtx.Step, sagaCtx.Compensating)
 	var delta = 1
 	var direction = 1
 	var step SagaStep[T]
@@ -124,8 +133,10 @@ func (o orchestrator[T]) execute(ctx context.Context, sagaCtx *SagaContext[T]) s
 	steps := o.saga.getSteps()
 	stepCount := len(steps)
 
+	fmt.Printf("=== [Sec] Looking for next invocable step starting from %d\n", sagaCtx.Step+direction)
 	for i := sagaCtx.Step + direction; i > -1 && i < stepCount; i += direction {
 		if step = steps[i]; step != nil && step.isInvocable(sagaCtx.Compensating) {
+			fmt.Printf("=== [Sec] Found invocable step at index %d\n", i)
 			break
 		}
 		delta += 1
@@ -138,6 +149,7 @@ func (o orchestrator[T]) execute(ctx context.Context, sagaCtx *SagaContext[T]) s
 	}
 
 	sagaCtx.advance(delta)
+	fmt.Printf("=== [Sec] Advanced to step %d\n", sagaCtx.Step)
 
 	return step.execute(ctx, sagaCtx)
 }

@@ -81,13 +81,14 @@ func (s *saga[T]) getSteps() []SagaStep[T] {
 }
 
 func (s *SagaContext[T]) advance(steps int) {
-	fmt.Println("=== [Sec] Advancing saga")
+	fmt.Printf("=== [Sec] Advancing saga from step %d by %d steps (compensating: %v)\n", s.Step, steps, s.Compensating)
 	var dir = 1
 	if s.Compensating {
 		dir = -1
 	}
 
 	s.Step += dir * steps
+	fmt.Printf("=== [Sec] Advanced to step %d\n", s.Step)
 }
 
 func (s *SagaContext[T]) complete() {
