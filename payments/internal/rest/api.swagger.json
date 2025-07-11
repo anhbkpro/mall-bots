@@ -80,7 +80,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/PaymentsServicePayInvoiceBody"
+              "type": "object"
             }
           }
         ],
@@ -91,9 +91,6 @@
     }
   },
   "definitions": {
-    "PaymentsServicePayInvoiceBody": {
-      "type": "object"
-    },
     "paymentspbAdjustInvoiceResponse": {
       "type": "object"
     },
@@ -156,7 +153,6 @@
         "details": {
           "type": "array",
           "items": {
-            "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
         }

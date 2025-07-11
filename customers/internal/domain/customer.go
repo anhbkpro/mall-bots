@@ -1,9 +1,11 @@
 package domain
 
 import (
-	"eda-in-golang/internal/ddd"
+	"fmt"
 
 	"github.com/stackus/errors"
+
+	"eda-in-golang/internal/ddd"
 )
 
 const CustomerAggregate = "customers.CustomerAggregate"
@@ -47,21 +49,25 @@ func RegisterCustomer(id, name, smsNumber string) (*Customer, error) {
 	customer.Name = name
 	customer.SmsNumber = smsNumber
 	customer.Enabled = true
-	customer.AddEvent(CustomerRegisteredEvent, &CustomerRegistered{Customer: customer})
+
+	customer.AddEvent(CustomerRegisteredEvent, &CustomerRegistered{
+		Customer: customer,
+	})
 
 	return customer, nil
 }
 
-func (Customer) Key() string {
-	return CustomerAggregate
-}
+func (Customer) Key() string { return CustomerAggregate }
 
-func (c *Customer) Authorize() error {
+func (c *Customer) Authorize( /* TODO authorize what? */ ) error {
 	if !c.Enabled {
 		return ErrCustomerNotAuthorized
 	}
 
-	c.AddEvent(CustomerAuthorizedEvent, &CustomerAuthorized{Customer: c})
+	fmt.Println("=== [Customers module] Authorizing customer:", c.ID)
+	c.AddEvent(CustomerAuthorizedEvent, &CustomerAuthorized{
+		Customer: c,
+	})
 
 	return nil
 }
@@ -72,7 +78,10 @@ func (c *Customer) Enable() error {
 	}
 
 	c.Enabled = true
-	c.AddEvent(CustomerEnabledEvent, &CustomerEnabled{Customer: c})
+
+	c.AddEvent(CustomerEnabledEvent, &CustomerEnabled{
+		Customer: c,
+	})
 
 	return nil
 }
@@ -83,7 +92,10 @@ func (c *Customer) Disable() error {
 	}
 
 	c.Enabled = false
-	c.AddEvent(CustomerDisabledEvent, &CustomerDisabled{Customer: c})
+
+	c.AddEvent(CustomerDisabledEvent, &CustomerDisabled{
+		Customer: c,
+	})
 
 	return nil
 }

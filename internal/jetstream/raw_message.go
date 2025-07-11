@@ -1,6 +1,8 @@
 package jetstream
 
-import "eda-in-golang/internal/am"
+import (
+	"eda-in-golang/internal/am"
+)
 
 type rawMessage struct {
 	id       string
@@ -15,32 +17,22 @@ type rawMessage struct {
 
 var _ am.RawMessage = (*rawMessage)(nil)
 
-func (m rawMessage) ID() string {
-	return m.id
-}
+func (m rawMessage) ID() string          { return m.id }
+func (m rawMessage) MessageName() string { return m.name }
+func (m rawMessage) Data() []byte        { return m.data }
 
-func (m rawMessage) MessageName() string {
-	return m.name
-}
-
-func (m rawMessage) Data() []byte {
-	return m.data
-}
-
-func (m rawMessage) Ack() error {
+func (m *rawMessage) Ack() error {
 	if m.acked {
 		return nil
 	}
-
 	m.acked = true
 	return m.ackFn()
 }
 
-func (m rawMessage) NAck() error {
+func (m *rawMessage) NAck() error {
 	if m.acked {
 		return nil
 	}
-
 	m.acked = true
 	return m.nackFn()
 }

@@ -34,7 +34,6 @@ type (
 	}
 )
 
-// Aggregate implements the AggregateNamer and Eventer interfaces
 var _ interface {
 	AggregateNamer
 	Eventer

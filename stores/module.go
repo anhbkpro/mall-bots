@@ -24,76 +24,69 @@ import (
 type Module struct {
 }
 
-func (m *Module) Startup(ctx context.Context, mono monolith.Monolith) error {
+func (m *Module) Startup(ctx context.Context, mono monolith.Monolith) (err error) {
 	// setup Driven adapters
 	reg := registry.New()
-	err := registrations(reg)
-	if err != nil {
+	if err = registrations(reg); err != nil {
 		return err
 	}
-	if err := storespb.Registrations(reg); err != nil {
+	if err = storespb.Registrations(reg); err != nil {
 		return err
 	}
-	eventStream := am.NewEventStream(reg, jetstream.NewStream(mono.Config().Nats.Stream, mono.JS()))
+	eventStream := am.NewEventStream(reg, jetstream.NewStream(mono.Config().Nats.Stream, mono.JS(), mono.Logger()))
 	domainDispatcher := ddd.NewEventDispatcher[ddd.AggregateEvent]()
 	aggregateStore := es.AggregateStoreWithMiddleware(
-		pg.NewEventStore("stores.events", mono.DB(), reg),       // es.AggregateStore implementation (event store)
-		es.NewEventPublisher(domainDispatcher),                  // es.AggregateStoreMiddleware -> add publish event capability to the event store
-		pg.NewSnapshotStore("stores.snapshots", mono.DB(), reg), // es.AggregateStoreMiddleware -> add snapshot capability to the event store
+		pg.NewEventStore("stores.events", mono.DB(), reg),
+		es.NewEventPublisher(domainDispatcher),
+		pg.NewSnapshotStore("stores.snapshots", mono.DB(), reg),
 	)
-	// stores aggregate repository (es.AggregateRepository[*domain.Store])
 	stores := es.NewAggregateRepository[*domain.Store](domain.StoreAggregate, reg, aggregateStore)
 	products := es.NewAggregateRepository[*domain.Product](domain.ProductAggregate, reg, aggregateStore)
 	catalog := postgres.NewCatalogRepository("stores.products", mono.DB())
 	mall := postgres.NewMallRepository("stores.stores", mono.DB())
 
 	// setup application
-	//? flow: application -> stores -> aggregateStore -> eventStore -> eventPublisher -> eventHandlers
 	app := logging.LogApplicationAccess(
-		// Because we have implemented the domain.StoreRepository interface,
-		// we can pass the stores aggregate repository to the application
 		application.New(stores, products, catalog, mall),
 		mono.Logger(),
 	)
-	catalogHandlers := logging.LogEventHandlerAccess(
+	catalogHandlers := logging.LogEventHandlerAccess[ddd.AggregateEvent](
 		application.NewCatalogHandlers(catalog),
 		"Catalog", mono.Logger(),
 	)
-	mallHandlers := logging.LogEventHandlerAccess(
+	mallHandlers := logging.LogEventHandlerAccess[ddd.AggregateEvent](
 		application.NewMallHandlers(mall),
 		"Mall", mono.Logger(),
 	)
-	integrationEventHandlers := logging.LogEventHandlerAccess(
-		application.NewIntegrationEventHandlers(eventStream),
-		"Integration", mono.Logger(),
+	domainEventHandlers := logging.LogEventHandlerAccess[ddd.AggregateEvent](
+		handlers.NewDomainEventHandlers(eventStream),
+		"DomainEvents", mono.Logger(),
 	)
 
 	// setup Driver adapters
-	if err := grpc.RegisterServer(ctx, app, mono.RPC()); err != nil {
+	if err = grpc.RegisterServer(ctx, app, mono.RPC()); err != nil {
 		return err
 	}
-	if err := rest.RegisterGateway(ctx, mono.Mux(), mono.Config().Rpc.Address()); err != nil {
+	if err = rest.RegisterGateway(ctx, mono.Mux(), mono.Config().Rpc.Address()); err != nil {
 		return err
 	}
-	if err := rest.RegisterSwagger(mono.Mux()); err != nil {
+	if err = rest.RegisterSwagger(mono.Mux()); err != nil {
 		return err
 	}
 	handlers.RegisterCatalogHandlers(catalogHandlers, domainDispatcher)
-	// to register mall handlers, we need to subscribe to the store created event
-	// so when a store is created (StoreCreatedEvent), the mall handlers (mallHandlers) will be called
 	handlers.RegisterMallHandlers(mallHandlers, domainDispatcher)
-	handlers.RegisterIntegrationEventHandlers(integrationEventHandlers, domainDispatcher)
+	handlers.RegisterDomainEventHandlers(domainDispatcher, domainEventHandlers)
+	if err = storespb.RegisterAsyncAPI(mono.Mux()); err != nil {
+		return err
+	}
 
 	return nil
 }
 
-// The registrations function is responsible for registering domain aggregates and events with a JSON serde,
-// enabling serialization and deserialization operations.
 func registrations(reg registry.Registry) (err error) {
-	// 1. Create a new registry with the JSON serde
 	serde := serdes.NewJsonSerde(reg)
 
-	// 2. Register the store aggregate
+	// Store
 	if err = serde.Register(domain.Store{}, func(v any) error {
 		store := v.(*domain.Store)
 		store.Aggregate = es.NewAggregate("", domain.StoreAggregate)
@@ -101,7 +94,7 @@ func registrations(reg registry.Registry) (err error) {
 	}); err != nil {
 		return
 	}
-	// 3. Register the store events
+	// store events
 	if err = serde.Register(domain.StoreCreated{}); err != nil {
 		return
 	}

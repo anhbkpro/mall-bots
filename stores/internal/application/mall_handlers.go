@@ -2,13 +2,11 @@ package application
 
 import (
 	"context"
-	"log"
 
 	"eda-in-golang/internal/ddd"
 	"eda-in-golang/stores/internal/domain"
 )
 
-// implements ddd.EventHandler
 type MallHandlers[T ddd.AggregateEvent] struct {
 	mall domain.MallRepository
 }
@@ -21,7 +19,6 @@ func NewMallHandlers(mall domain.MallRepository) *MallHandlers[ddd.AggregateEven
 	}
 }
 
-// The HandleEvent() method simply proxies the event into different methods based on the event name.
 func (h MallHandlers[T]) HandleEvent(ctx context.Context, event T) error {
 	switch event.EventName() {
 	case domain.StoreCreatedEvent:
@@ -38,7 +35,6 @@ func (h MallHandlers[T]) HandleEvent(ctx context.Context, event T) error {
 
 func (h MallHandlers[T]) onStoreCreated(ctx context.Context, event ddd.AggregateEvent) error {
 	payload := event.Payload().(*domain.StoreCreated)
-	log.Printf("MallHandlers.onStoreCreated: Starting to add store with ID=%s, Name=%s, Location=%s", event.AggregateID(), payload.Name, payload.Location)
 	return h.mall.AddStore(ctx, event.AggregateID(), payload.Name, payload.Location)
 }
 

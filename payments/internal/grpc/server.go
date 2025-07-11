@@ -2,13 +2,12 @@ package grpc
 
 import (
 	"context"
-	"eda-in-golang/payments/internal/application"
-	"eda-in-golang/payments/paymentspb"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+
+	"eda-in-golang/payments/internal/application"
+	"eda-in-golang/payments/paymentspb"
 )
 
 type server struct {
@@ -18,22 +17,65 @@ type server struct {
 
 var _ paymentspb.PaymentsServiceServer = (*server)(nil)
 
-func RegisterServer(app application.App, registrar grpc.ServiceRegistrar) error {
-	paymentspb.RegisterPaymentsServiceServer(registrar, &server{app: app})
+func RegisterServer(_ context.Context, app application.App, registrar grpc.ServiceRegistrar) error {
+	paymentspb.RegisterPaymentsServiceServer(registrar, server{app: app})
 	return nil
 }
 
-func (s server) AuthorizePayment(ctx context.Context, req *paymentspb.AuthorizePaymentRequest) (*paymentspb.AuthorizePaymentResponse, error) {
+func (s server) AuthorizePayment(ctx context.Context, request *paymentspb.AuthorizePaymentRequest,
+) (*paymentspb.AuthorizePaymentResponse, error) {
 	id := uuid.New().String()
 	err := s.app.AuthorizePayment(ctx, application.AuthorizePayment{
 		ID:         id,
-		CustomerID: req.GetCustomerId(),
-		Amount:     req.GetAmount(),
+		CustomerID: request.GetCustomerId(),
+		Amount:     request.GetAmount(),
 	})
+	return &paymentspb.AuthorizePaymentResponse{Id: id}, err
+}
 
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "authorize payment: %v", err)
-	}
+func (s server) ConfirmPayment(ctx context.Context, request *paymentspb.ConfirmPaymentRequest,
+) (*paymentspb.ConfirmPaymentResponse, error) {
+	err := s.app.ConfirmPayment(ctx, application.ConfirmPayment{
+		ID: request.GetId(),
+	})
+	return &paymentspb.ConfirmPaymentResponse{}, err
+}
 
-	return &paymentspb.AuthorizePaymentResponse{Id: id}, nil
+func (s server) CreateInvoice(ctx context.Context, request *paymentspb.CreateInvoiceRequest,
+) (*paymentspb.CreateInvoiceResponse, error) {
+	id := uuid.New().String()
+	err := s.app.CreateInvoice(ctx, application.CreateInvoice{
+		ID:      id,
+		OrderID: request.GetOrderId(),
+		Amount:  request.GetAmount(),
+	})
+	return &paymentspb.CreateInvoiceResponse{
+		Id: id,
+	}, err
+}
+
+func (s server) AdjustInvoice(ctx context.Context, request *paymentspb.AdjustInvoiceRequest,
+) (*paymentspb.AdjustInvoiceResponse, error) {
+	err := s.app.AdjustInvoice(ctx, application.AdjustInvoice{
+		ID:     request.GetId(),
+		Amount: request.GetAmount(),
+	})
+	return &paymentspb.AdjustInvoiceResponse{}, err
+}
+
+func (s server) PayInvoice(ctx context.Context, request *paymentspb.PayInvoiceRequest) (*paymentspb.PayInvoiceResponse,
+	error,
+) {
+	err := s.app.PayInvoice(ctx, application.PayInvoice{
+		ID: request.GetId(),
+	})
+	return &paymentspb.PayInvoiceResponse{}, err
+}
+
+func (s server) CancelInvoice(ctx context.Context, request *paymentspb.CancelInvoiceRequest,
+) (*paymentspb.CancelInvoiceResponse, error) {
+	err := s.app.CancelInvoice(ctx, application.CancelInvoice{
+		ID: request.GetId(),
+	})
+	return &paymentspb.CancelInvoiceResponse{}, err
 }

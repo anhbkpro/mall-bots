@@ -14,7 +14,7 @@ type (
 		Queries
 	}
 	Commands interface {
-		CreateStore(ctx context.Context, cmd commands.CreateStoreCmd) error
+		CreateStore(ctx context.Context, cmd commands.CreateStore) error
 		EnableParticipation(ctx context.Context, cmd commands.EnableParticipation) error
 		DisableParticipation(ctx context.Context, cmd commands.DisableParticipation) error
 		RebrandStore(ctx context.Context, cmd commands.RebrandStore) error
@@ -58,11 +58,8 @@ type (
 
 var _ App = (*Application)(nil)
 
-func New(
-	stores domain.StoreRepository,
-	products domain.ProductRepository,
-	catalog domain.CatalogRepository,
-	mall domain.MallRepository,
+func New(stores domain.StoreRepository, products domain.ProductRepository,
+	catalog domain.CatalogRepository, mall domain.MallRepository,
 ) *Application {
 	return &Application{
 		appCommands: appCommands{

@@ -23,7 +23,6 @@ type Product struct {
 	Description string
 	SKU         string
 	Price       float64
-	Weight      float64
 }
 
 var _ interface {
@@ -135,14 +134,6 @@ func (p *Product) ApplySnapshot(snapshot es.Snapshot) error {
 		p.Description = ss.Description
 		p.SKU = ss.SKU
 		p.Price = ss.Price
-
-	case *ProductV2:
-		p.StoreID = ss.StoreID
-		p.Name = ss.Name
-		p.Description = ss.Description
-		p.SKU = ss.SKU
-		p.Price = ss.Price
-		p.Weight = ss.Weight
 
 	default:
 		return errors.ErrInternal.Msgf("%T received the unexpected snapshot %T", p, snapshot)

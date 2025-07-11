@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package storespb;
 
-// we defined our public events as protocol buffer messages
 message StoreCreated {
   string id = 1;
   string name = 2;

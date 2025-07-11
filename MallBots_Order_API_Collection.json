@@ -1,0 +1,458 @@
+{
+  "info": {
+    "name": "MallBots Order API Collection",
+    "_postman_id": "mallbots-order-api-collection",
+    "description": "Complete MallBots API collection for testing order operations with all related data setup",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Setup Data",
+      "item": [
+        {
+          "name": "Create Customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"smsNumber\": \"+1234567890\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/customers",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "customers"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('customerId', response.id);",
+                  "    console.log('Customer ID set:', response.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Store",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Tech Store\",\n  \"location\": \"San Francisco, CA\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/stores",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "stores"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('storeId', response.id);",
+                  "    console.log('Store ID set:', response.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Enable Store Participation",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/stores/{{storeId}}/enable-participation",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "stores", "{{storeId}}", "enable-participation"]
+            }
+          }
+        },
+        {
+          "name": "Add Product to Store",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"iPhone 15\",\n  \"description\": \"Latest iPhone model\",\n  \"sku\": \"IPHONE-15-128GB\",\n  \"price\": 999.99\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/stores/{{storeId}}/products",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "stores", "{{storeId}}", "products"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('productId', response.id);",
+                  "    console.log('Product ID set:', response.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Authorize Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"amount\": 999.99\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/payments/authorize",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "payments", "authorize"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('paymentId', response.id);",
+                  "    console.log('Payment ID set:', response.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Order Operations",
+      "item": [
+        {
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"storeId\": \"{{storeId}}\",\n      \"productId\": \"{{productId}}\",\n      \"storeName\": \"Tech Store\",\n      \"productName\": \"iPhone 15\",\n      \"price\": 999.99,\n      \"quantity\": 1\n    }\n  ],\n  \"customerId\": \"{{customerId}}\",\n  \"paymentId\": \"{{paymentId}}\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/ordering/orders",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "ordering", "orders"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('orderId', response.id);",
+                  "    console.log('Order ID set:', response.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Order Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/ordering/orders/{{orderId}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "ordering", "orders", "{{orderId}}"]
+            }
+          }
+        },
+        {
+          "name": "Ready Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/ordering/orders/{{orderId}}/ready",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "ordering", "orders", "{{orderId}}", "ready"]
+            }
+          }
+        },
+        {
+          "name": "Complete Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invoiceId\": \"{{invoiceId}}\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/ordering/orders/{{orderId}}/complete",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "ordering", "orders", "{{orderId}}", "complete"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/ordering/orders/{{orderId}}/cancel",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "ordering", "orders", "{{orderId}}", "cancel"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payment Operations",
+      "item": [
+        {
+          "name": "Confirm Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/payments/{{paymentId}}/confirm",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "payments", "{{paymentId}}", "confirm"]
+            }
+          }
+        },
+        {
+          "name": "Create Invoice",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"paymentId\": \"{{paymentId}}\",\n  \"amount\": 999.99\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/payments/invoices",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "payments", "invoices"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('invoiceId', response.id);",
+                  "    console.log('Invoice ID set:', response.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pay Invoice",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/payments/invoices/{{invoiceId}}/pay",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "payments", "invoices", "{{invoiceId}}", "pay"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Data Retrieval",
+      "item": [
+        {
+          "name": "Get Customer Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/customers/{{customerId}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "customers", "{{customerId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Store Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/stores/{{storeId}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "stores", "{{storeId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Store Catalog",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/stores/{{storeId}}/catalog",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "stores", "{{storeId}}", "catalog"]
+            }
+          }
+        },
+        {
+          "name": "Get All Participating Stores",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/stores/participating",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "stores", "participating"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "customerId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "storeId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "productId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "paymentId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "orderId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "invoiceId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

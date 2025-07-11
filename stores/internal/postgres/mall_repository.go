@@ -11,7 +11,7 @@ import (
 )
 
 type MallRepository struct {
-	tableName string // "stores.stores"
+	tableName string
 	db        *sql.DB
 }
 
@@ -24,7 +24,6 @@ func NewMallRepository(tableName string, db *sql.DB) MallRepository {
 	}
 }
 
-// events table -> stores table
 func (r MallRepository) AddStore(ctx context.Context, storeID, name, location string) error {
 	const query = "INSERT INTO %s (id, name, location, participating) VALUES ($1, $2, $3, $4)"
 

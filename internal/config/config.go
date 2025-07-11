@@ -26,7 +26,7 @@ type (
 		Environment     string
 		LogLevel        string `envconfig:"LOG_LEVEL" default:"DEBUG"`
 		PG              PGConfig
-		Nats            NatsConfig // configuration for NATS
+		Nats            NatsConfig
 		Rpc             rpc.RpcConfig
 		Web             web.WebConfig
 		ShutdownTimeout time.Duration `envconfig:"SHUTDOWN_TIMEOUT" default:"30s"`

@@ -21,7 +21,6 @@ const (
 	ProductRemovedEvent        = "storesapi.ProductRemoved"
 )
 
-// we make the events registerable
 func Registrations(reg registry.Registry) error {
 	serde := serdes.NewProtoSerde(reg)
 

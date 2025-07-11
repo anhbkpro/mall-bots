@@ -3,10 +3,10 @@ package models
 type InvoiceStatus string
 
 const (
-	InvoiceStatusUnknown InvoiceStatus = ""
-	InvoiceStatusPending InvoiceStatus = "pending"
-	InvoiceStatusPaid    InvoiceStatus = "paid"
-	InvoiceStatusFailed  InvoiceStatus = "failed"
+	InvoiceIsUnknown  InvoiceStatus = ""
+	InvoiceIsPending  InvoiceStatus = "pending"
+	InvoiceIsPaid     InvoiceStatus = "paid"
+	InvoiceIsCanceled InvoiceStatus = "canceled"
 )
 
 type Invoice struct {
@@ -18,9 +18,9 @@ type Invoice struct {
 
 func (s InvoiceStatus) String() string {
 	switch s {
-	case InvoiceStatusPending, InvoiceStatusPaid, InvoiceStatusFailed:
+	case InvoiceIsPending, InvoiceIsPaid, InvoiceIsCanceled:
 		return string(s)
 	default:
-		return string(InvoiceStatusUnknown)
+		return ""
 	}
 }

@@ -29,7 +29,7 @@ func RegisterServer(_ context.Context, app application.App, registrar grpc.Servi
 func (s server) CreateStore(ctx context.Context, request *storespb.CreateStoreRequest) (*storespb.CreateStoreResponse, error) {
 	storeID := uuid.New().String()
 
-	err := s.app.CreateStore(ctx, commands.CreateStoreCmd{
+	err := s.app.CreateStore(ctx, commands.CreateStore{
 		ID:       storeID,
 		Name:     request.GetName(),
 		Location: request.GetLocation(),

@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 
 	"github.com/stackus/errors"
 
@@ -61,12 +60,10 @@ func (s SnapshotStore) Load(ctx context.Context, aggregate es.EventSourcedAggreg
 }
 
 func (s SnapshotStore) Save(ctx context.Context, aggregate es.EventSourcedAggregate) error {
-	const query = `INSERT INTO %s (stream_id, stream_name, stream_version, snapshot_name, snapshot_data)
-VALUES ($1, $2, $3, $4, $5)
+	const query = `INSERT INTO %s (stream_id, stream_name, stream_version, snapshot_name, snapshot_data) 
+VALUES ($1, $2, $3, $4, $5) 
 ON CONFLICT (stream_id, stream_name) DO
 UPDATE SET stream_version = EXCLUDED.stream_version, snapshot_name = EXCLUDED.snapshot_name, snapshot_data = EXCLUDED.snapshot_data`
-
-	log.Printf("[Middleware] SnapshotStore.Save: Saving aggregate to event store for ID=%s", aggregate.ID())
 
 	if err := s.AggregateStore.Save(ctx, aggregate); err != nil {
 		return err
@@ -75,8 +72,6 @@ UPDATE SET stream_version = EXCLUDED.stream_version, snapshot_name = EXCLUDED.sn
 	if !s.shouldSnapshot(aggregate) {
 		return nil
 	}
-
-	log.Printf("[Middleware] SnapshotStore.Save: Saving snapshot for aggregate ID=%s", aggregate.ID())
 
 	sser, ok := aggregate.(es.Snapshotter)
 	if !ok {

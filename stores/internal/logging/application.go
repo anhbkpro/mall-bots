@@ -25,7 +25,7 @@ func LogApplicationAccess(application application.App, logger zerolog.Logger) Ap
 	}
 }
 
-func (a Application) CreateStore(ctx context.Context, cmd commands.CreateStoreCmd) (err error) {
+func (a Application) CreateStore(ctx context.Context, cmd commands.CreateStore) (err error) {
 	a.logger.Info().Msg("--> Stores.CreateStore")
 	defer func() { a.logger.Info().Err(err).Msg("<-- Stores.CreateStore") }()
 	return a.App.CreateStore(ctx, cmd)

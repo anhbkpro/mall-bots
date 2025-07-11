@@ -1,0 +1,81 @@
+sequenceDiagram
+    participant Client
+    participant Orchestrator as Saga Orchestrator
+    participant OrderSvc as Order Service
+    participant InventorySvc as Inventory Service
+    participant SagaStore as Saga Store
+
+    Note over Client,SagaStore: Successful Saga Flow
+
+    Client->>Orchestrator: POST /process-order
+    Orchestrator->>SagaStore: Create Saga Transaction
+    SagaStore-->>Orchestrator: Saga ID created
+    
+    rect rgb(240, 248, 255)
+        Note over Orchestrator,OrderSvc: Step 1: CREATE_ORDER
+        Orchestrator->>OrderSvc: Create Order (PENDING)
+        OrderSvc->>OrderSvc: INSERT order with saga_id
+        OrderSvc-->>Orchestrator: Order created ✓
+        Orchestrator->>SagaStore: Update step status: COMPLETED
+    end
+    
+    rect rgb(240, 255, 240)
+        Note over Orchestrator,InventorySvc: Step 2: RESERVE_INVENTORY
+        Orchestrator->>InventorySvc: Reserve Inventory
+        InventorySvc->>InventorySvc: Check availability
+        InventorySvc->>InventorySvc: Create reservation
+        InventorySvc->>InventorySvc: Reduce available stock
+        InventorySvc-->>Orchestrator: Inventory reserved ✓
+        Orchestrator->>SagaStore: Update step status: COMPLETED
+    end
+    
+    rect rgb(255, 248, 240)
+        Note over Orchestrator,OrderSvc: Step 3: CONFIRM_ORDER
+        Orchestrator->>OrderSvc: Confirm Order
+        OrderSvc->>OrderSvc: UPDATE status to CONFIRMED
+        OrderSvc-->>Orchestrator: Order confirmed ✓
+        Orchestrator->>SagaStore: Update step status: COMPLETED
+    end
+    
+    rect rgb(248, 240, 255)
+        Note over Orchestrator,InventorySvc: Step 4: CONFIRM_INVENTORY
+        Orchestrator->>InventorySvc: Confirm Reservation
+        InventorySvc->>InventorySvc: UPDATE reservation to CONFIRMED
+        InventorySvc-->>Orchestrator: Reservation confirmed ✓
+        Orchestrator->>SagaStore: Update step status: COMPLETED
+    end
+    
+    Orchestrator->>SagaStore: Mark Saga as COMPLETED
+    Orchestrator-->>Client: Success Response + Saga Details
+
+    Note over Client,SagaStore: Failure Saga Flow with Compensation
+
+    Client->>Orchestrator: POST /process-order (insufficient inventory)
+    Orchestrator->>SagaStore: Create Saga Transaction
+    
+    rect rgb(240, 248, 255)
+        Note over Orchestrator,OrderSvc: Step 1: CREATE_ORDER
+        Orchestrator->>OrderSvc: Create Order (PENDING)
+        OrderSvc-->>Orchestrator: Order created ✓
+        Orchestrator->>SagaStore: Update step status: COMPLETED
+    end
+    
+    rect rgb(255, 240, 240)
+        Note over Orchestrator,InventorySvc: Step 2: RESERVE_INVENTORY (FAILS)
+        Orchestrator->>InventorySvc: Reserve Inventory
+        InventorySvc->>InventorySvc: Check availability
+        InventorySvc-->>Orchestrator: Insufficient inventory ❌
+        Orchestrator->>SagaStore: Update step status: FAILED
+        Orchestrator->>SagaStore: Mark Saga as COMPENSATING
+    end
+    
+    rect rgb(255, 255, 200)
+        Note over Orchestrator,OrderSvc: Compensation: CANCEL_ORDER
+        Orchestrator->>OrderSvc: Cancel Order
+        OrderSvc->>OrderSvc: UPDATE status to CANCELLED
+        OrderSvc-->>Orchestrator: Order cancelled ✓
+        Orchestrator->>SagaStore: Update step status: COMPENSATED
+    end
+    
+    Orchestrator->>SagaStore: Mark Saga as COMPENSATED
+    Orchestrator-->>Client: Error Response + Compensation Details

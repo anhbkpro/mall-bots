@@ -2,14 +2,13 @@ package grpc
 
 import (
 	"context"
-	"eda-in-golang/customers/customerspb"
-	"eda-in-golang/customers/internal/application"
-	"eda-in-golang/customers/internal/domain"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+
+	"eda-in-golang/customers/customerspb"
+	"eda-in-golang/customers/internal/application"
+	"eda-in-golang/customers/internal/domain"
 )
 
 type server struct {
@@ -20,40 +19,37 @@ type server struct {
 var _ customerspb.CustomersServiceServer = (*server)(nil)
 
 func RegisterServer(app application.App, registrar grpc.ServiceRegistrar) error {
-	customerspb.RegisterCustomersServiceServer(registrar, &server{app: app})
+	customerspb.RegisterCustomersServiceServer(registrar, server{app: app})
 	return nil
 }
 
-func (s server) RegisterCustomer(ctx context.Context, req *customerspb.RegisterCustomerRequest) (*customerspb.RegisterCustomerResponse, error) {
+func (s server) RegisterCustomer(ctx context.Context, request *customerspb.RegisterCustomerRequest,
+) (*customerspb.RegisterCustomerResponse, error) {
 	id := uuid.New().String()
 	err := s.app.RegisterCustomer(ctx, application.RegisterCustomer{
 		ID:        id,
-		Name:      req.Name,
-		SmsNumber: req.SmsNumber,
+		Name:      request.GetName(),
+		SmsNumber: request.GetSmsNumber(),
 	})
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "register customer: %v", err)
-	}
-
-	return &customerspb.RegisterCustomerResponse{Id: id}, nil
+	return &customerspb.RegisterCustomerResponse{Id: id}, err
 }
 
-func (s server) AuthorizeCustomer(ctx context.Context, req *customerspb.AuthorizeCustomerRequest) (*customerspb.AuthorizeCustomerResponse, error) {
+func (s server) AuthorizeCustomer(ctx context.Context, request *customerspb.AuthorizeCustomerRequest,
+) (*customerspb.AuthorizeCustomerResponse, error) {
 	err := s.app.AuthorizeCustomer(ctx, application.AuthorizeCustomer{
-		ID: req.Id,
+		ID: request.GetId(),
 	})
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "authorize customer: %v", err)
-	}
-	return &customerspb.AuthorizeCustomerResponse{}, nil
+
+	return &customerspb.AuthorizeCustomerResponse{}, err
 }
 
-func (s server) GetCustomer(ctx context.Context, req *customerspb.GetCustomerRequest) (*customerspb.GetCustomerResponse, error) {
+func (s server) GetCustomer(ctx context.Context, request *customerspb.GetCustomerRequest,
+) (*customerspb.GetCustomerResponse, error) {
 	customer, err := s.app.GetCustomer(ctx, application.GetCustomer{
-		ID: req.GetId(),
+		ID: request.GetId(),
 	})
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "get customer: %v", err)
+		return nil, err
 	}
 
 	return &customerspb.GetCustomerResponse{
@@ -61,24 +57,16 @@ func (s server) GetCustomer(ctx context.Context, req *customerspb.GetCustomerReq
 	}, nil
 }
 
-func (s server) EnableCustomer(ctx context.Context, req *customerspb.EnableCustomerRequest) (*customerspb.EnableCustomerResponse, error) {
-	err := s.app.EnableCustomer(ctx, application.EnableCustomer{
-		ID: req.GetId(),
-	})
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "enable customer: %v", err)
-	}
-	return &customerspb.EnableCustomerResponse{}, nil
+func (s server) EnableCustomer(ctx context.Context, request *customerspb.EnableCustomerRequest,
+) (*customerspb.EnableCustomerResponse, error) {
+	err := s.app.EnableCustomer(ctx, application.EnableCustomer{ID: request.GetId()})
+	return &customerspb.EnableCustomerResponse{}, err
 }
 
-func (s server) DisableCustomer(ctx context.Context, req *customerspb.DisableCustomerRequest) (*customerspb.DisableCustomerResponse, error) {
-	err := s.app.DisableCustomer(ctx, application.DisableCustomer{
-		ID: req.GetId(),
-	})
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "disable customer: %v", err)
-	}
-	return &customerspb.DisableCustomerResponse{}, nil
+func (s server) DisableCustomer(ctx context.Context, request *customerspb.DisableCustomerRequest,
+) (*customerspb.DisableCustomerResponse, error) {
+	err := s.app.DisableCustomer(ctx, application.DisableCustomer{ID: request.GetId()})
+	return &customerspb.DisableCustomerResponse{}, err
 }
 
 func (s server) customerFromDomain(customer *domain.Customer) *customerspb.Customer {

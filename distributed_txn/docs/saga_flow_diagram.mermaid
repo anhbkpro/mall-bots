@@ -1,0 +1,36 @@
+graph TB
+    Start([Order Request]) --> CreateSaga[Create Saga Transaction]
+    CreateSaga --> Step1[Step 1: CREATE_ORDER]
+    
+    Step1 --> Step1Check{Order Created?}
+    Step1Check -->|Success| Step2[Step 2: RESERVE_INVENTORY]
+    Step1Check -->|Failure| Comp1[Compensate: No action needed]
+    Comp1 --> Failed([Saga Failed])
+    
+    Step2 --> Step2Check{Inventory Reserved?}
+    Step2Check -->|Success| Step3[Step 3: CONFIRM_ORDER]
+    Step2Check -->|Failure| Comp2[Compensate: CANCEL_ORDER]
+    Comp2 --> Compensated([Saga Compensated])
+    
+    Step3 --> Step3Check{Order Confirmed?}
+    Step3Check -->|Success| Step4[Step 4: CONFIRM_INVENTORY]
+    Step3Check -->|Failure| Comp3A[Compensate: CANCEL_RESERVATION]
+    Comp3A --> Comp3B[Compensate: CANCEL_ORDER]
+    Comp3B --> Compensated
+    
+    Step4 --> Step4Check{Inventory Confirmed?}
+    Step4Check -->|Success| Success([Saga Completed Successfully])
+    Step4Check -->|Failure| Comp4A[Compensate: CANCEL_RESERVATION]
+    Comp4A --> Comp4B[Compensate: CANCEL_ORDER]
+    Comp4B --> Compensated
+
+    %% Styling
+    classDef successClass fill:#d4edda,stroke:#155724,color:#155724
+    classDef failureClass fill:#f8d7da,stroke:#721c24,color:#721c24
+    classDef compensateClass fill:#fff3cd,stroke:#856404,color:#856404
+    classDef processClass fill:#cce5ff,stroke:#004085,color:#004085
+    
+    class Success successClass
+    class Failed,Compensated failureClass
+    class Comp1,Comp2,Comp3A,Comp3B,Comp4A,Comp4B compensateClass
+    class Step1,Step2,Step3,Step4,CreateSaga processClass

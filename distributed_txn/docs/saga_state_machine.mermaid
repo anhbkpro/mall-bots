@@ -1,0 +1,53 @@
+stateDiagram-v2
+    [*] --> STARTED: Create Saga
+    
+    STARTED --> CREATE_ORDER: Execute Step 1
+    CREATE_ORDER --> RESERVE_INVENTORY: Step 1 Success
+    CREATE_ORDER --> FAILED: Step 1 Failed
+    
+    RESERVE_INVENTORY --> CONFIRM_ORDER: Step 2 Success
+    RESERVE_INVENTORY --> COMPENSATING: Step 2 Failed
+    
+    CONFIRM_ORDER --> CONFIRM_INVENTORY: Step 3 Success
+    CONFIRM_ORDER --> COMPENSATING: Step 3 Failed
+    
+    CONFIRM_INVENTORY --> COMPLETED: Step 4 Success
+    CONFIRM_INVENTORY --> COMPENSATING: Step 4 Failed
+    
+    COMPENSATING --> COMPENSATED: All Compensations Success
+    COMPENSATING --> COMPENSATION_FAILED: Compensation Failed
+    
+    COMPLETED --> [*]: Success
+    COMPENSATED --> [*]: Rolled Back
+    FAILED --> [*]: Failed Early
+    COMPENSATION_FAILED --> [*]: Manual Intervention Needed
+    
+    state COMPENSATING {
+        [*] --> CompensateStep4: If Step 4 executed
+        [*] --> CompensateStep3: If Step 3 executed
+        [*] --> CompensateStep2: If Step 2 executed
+        [*] --> CompensateStep1: If Step 1 executed
+        
+        CompensateStep4 --> CompensateStep3: Inventory compensation done
+        CompensateStep3 --> CompensateStep2: Order confirmation undone
+        CompensateStep2 --> CompensateStep1: Inventory reservation cancelled
+        CompensateStep1 --> [*]: Order cancelled
+    }
+    
+    note right of COMPLETED
+        All steps executed successfully
+        Order is confirmed
+        Inventory is allocated
+    end note
+    
+    note right of COMPENSATED
+        All executed steps compensated
+        System returned to consistent state
+        No side effects remain
+    end note
+    
+    note right of COMPENSATION_FAILED
+        Requires manual intervention
+        Partial compensation state
+        Alert operations team
+    end note

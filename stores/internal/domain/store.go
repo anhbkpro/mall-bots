@@ -16,7 +16,6 @@ var (
 	ErrStoreIsAlreadyNotParticipating = errors.Wrap(errors.ErrBadRequest, "the store is already not participating")
 )
 
-// ddd.Store is an implementation of es.EventSourcedAggregate
 type Store struct {
 	es.Aggregate
 	Name          string
@@ -29,7 +28,6 @@ var _ interface {
 	es.Snapshotter
 } = (*Store)(nil)
 
-// NewStore creates a new store aggregate with the given id and name
 func NewStore(id string) *Store {
 	return &Store{
 		Aggregate: es.NewAggregate(id, StoreAggregate),
@@ -45,15 +43,8 @@ func CreateStore(id, name, location string) (*Store, error) {
 		return nil, ErrStoreLocationIsBlank
 	}
 
-	// what happens here?
-	// 1. create a new store aggregate
-	// 2. add a new event to the store aggregate
-	// 3. return the store aggregate
 	store := NewStore(id)
 
-	// 4. the event will be applied to the store aggregate (ApplyEvent)
-	// 5. the store aggregate will be saved to the event store (AggregateRepository.Save)
-	// 6. the store aggregate will be saved to the database (AggregateRepository.Save)
 	store.AddEvent(StoreCreatedEvent, &StoreCreated{
 		Name:     name,
 		Location: location,

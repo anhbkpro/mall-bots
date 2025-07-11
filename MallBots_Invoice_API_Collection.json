@@ -1,0 +1,86 @@
+{
+  "info": {
+    "name": "MallBots Invoice API Collection",
+    "_postman_id": "mallbots-invoice-api-collection",
+    "description": "MallBots API endpoints for testing invoice operations (create, adjust, pay, cancel)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Invoice",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "accept", "value": "application/json" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"paymentId\": \"{{paymentId}}\",\n  \"amount\": 999.99\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/payments/invoices",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "payments", "invoices"]
+        }
+      }
+    },
+    {
+      "name": "Adjust Invoice",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "accept", "value": "application/json" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"amount\": 899.99\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/payments/invoices/{{invoiceId}}/adjust",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "payments", "invoices", "{{invoiceId}}", "adjust"]
+        }
+      }
+    },
+    {
+      "name": "Pay Invoice",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "accept", "value": "application/json" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/payments/invoices/{{invoiceId}}/pay",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "payments", "invoices", "{{invoiceId}}", "pay"]
+        }
+      }
+    },
+    {
+      "name": "Cancel Invoice",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "accept", "value": "application/json" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/payments/invoices/{{invoiceId}}/cancel",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "payments", "invoices", "{{invoiceId}}", "cancel"]
+        }
+      }
+    }
+  ]
+}
