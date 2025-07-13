@@ -3,7 +3,6 @@ package postgres
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
@@ -11,18 +10,19 @@ import (
 
 	"github.com/stackus/errors"
 
+	"eda-in-golang/internal/postgres"
 	"eda-in-golang/search/internal/application"
 	"eda-in-golang/search/internal/models"
 )
 
 type OrderRepository struct {
 	tableName string
-	db        *sql.DB
+	db        postgres.DB
 }
 
 var _ application.OrderRepository = (*OrderRepository)(nil)
 
-func NewOrderRepository(tableName string, db *sql.DB) OrderRepository {
+func NewOrderRepository(tableName string, db postgres.DB) OrderRepository {
 	return OrderRepository{
 		tableName: tableName,
 		db:        db,
@@ -33,9 +33,9 @@ func (r OrderRepository) Add(ctx context.Context, order *models.Order) error {
 	const query = `INSERT INTO %s (
 order_id, customer_id, customer_name,
 items, status, product_ids, store_ids,
-created_at) VALUES (
+created_at VALUES (
 $1, $2, $3,
-$4, $5, $6, $7,
+$4, $5, $6, $7
 $8
 )`
 	items, err := json.Marshal(order.Items)

@@ -2,7 +2,6 @@ package sec
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/stackus/errors"
 
@@ -11,15 +10,9 @@ import (
 )
 
 type (
-	// Orchestrator is the main component that manages the lifecycle of a saga.
-	// It is responsible for starting the saga, handling replies, and executing the saga steps.
-	// It is also responsible for publishing commands to the appropriate modules.
 	Orchestrator[T any] interface {
-		// Start is used to start the saga.
 		Start(ctx context.Context, id string, data T) error
-		// ReplyTopic is used to get the reply topic of the saga.
 		ReplyTopic() string
-		// HandleReply is used to handle replies from the appropriate modules.
 		HandleReply(ctx context.Context, reply ddd.Reply) error
 	}
 
@@ -85,18 +78,8 @@ func (o orchestrator[T]) HandleReply(ctx context.Context, reply ddd.Reply) error
 }
 
 func (o orchestrator[T]) handle(ctx context.Context, sagaCtx *SagaContext[T], reply ddd.Reply) (stepResult[T], error) {
-	steps := o.saga.getSteps()
+	step := o.saga.getSteps()[sagaCtx.Step]
 
-	fmt.Printf("=== [Sec] Handling reply for saga step %d (total steps: %d)\n", sagaCtx.Step, len(steps))
-
-	// Check if the current step index is valid
-	if sagaCtx.Step < 0 || sagaCtx.Step >= len(steps) {
-		return stepResult[T]{}, errors.ErrInternal.Msgf("invalid step index: %d", sagaCtx.Step)
-	}
-
-	step := steps[sagaCtx.Step]
-
-	fmt.Println("=== [Sec] Handling reply:", reply.ReplyName())
 	err := step.handle(ctx, sagaCtx, reply)
 	if err != nil {
 		return stepResult[T]{}, err
@@ -121,7 +104,6 @@ func (o orchestrator[T]) handle(ctx context.Context, sagaCtx *SagaContext[T], re
 }
 
 func (o orchestrator[T]) execute(ctx context.Context, sagaCtx *SagaContext[T]) stepResult[T] {
-	fmt.Printf("=== [Sec] Executing saga from step %d (compensating: %v)\n", sagaCtx.Step, sagaCtx.Compensating)
 	var delta = 1
 	var direction = 1
 	var step SagaStep[T]
@@ -133,23 +115,19 @@ func (o orchestrator[T]) execute(ctx context.Context, sagaCtx *SagaContext[T]) s
 	steps := o.saga.getSteps()
 	stepCount := len(steps)
 
-	fmt.Printf("=== [Sec] Looking for next invocable step starting from %d\n", sagaCtx.Step+direction)
 	for i := sagaCtx.Step + direction; i > -1 && i < stepCount; i += direction {
 		if step = steps[i]; step != nil && step.isInvocable(sagaCtx.Compensating) {
-			fmt.Printf("=== [Sec] Found invocable step at index %d\n", i)
 			break
 		}
 		delta += 1
 	}
 
 	if step == nil {
-		fmt.Println("=== [Sec] No invocable step found")
 		sagaCtx.complete()
 		return stepResult[T]{ctx: sagaCtx}
 	}
 
 	sagaCtx.advance(delta)
-	fmt.Printf("=== [Sec] Advanced to step %d\n", sagaCtx.Step)
 
 	return step.execute(ctx, sagaCtx)
 }

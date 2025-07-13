@@ -22,43 +22,32 @@ type createOrderSaga struct {
 
 func NewCreateOrderSaga() sec.Saga[*models.CreateOrderData] {
 	saga := createOrderSaga{
-		Saga: sec.NewSaga[*models.CreateOrderData](
-			CreateOrderSagaName,
-			CreateOrderReplyChannel,
-		),
+		Saga: sec.NewSaga[*models.CreateOrderData](CreateOrderSagaName, CreateOrderReplyChannel),
 	}
-
-	// Saga steps
-	// 0. -RejectOrder
-	// 1. AuthorizeCustomer
-	// 2. CreateShoppingList, -CancelShoppingList
-	// 3. ConfirmPayment
-	// 4. InitiateShopping
-	// 5. ApproveOrder
 
 	// 0. -RejectOrder
 	saga.AddStep().
 		Compensation(saga.rejectOrder)
 
-	// 1. AuthorizeCustomer (Customers module)
+	// 1. AuthorizeCustomer
 	saga.AddStep().
 		Action(saga.authorizeCustomer)
 
-	// 2. CreateShoppingList, -CancelShoppingList (Depot module)
+	// 2. CreateShoppingList, -CancelShoppingList
 	saga.AddStep().
 		Action(saga.createShoppingList).
 		OnActionReply(depotpb.CreatedShoppingListReply, saga.onCreatedShoppingListReply).
 		Compensation(saga.cancelShoppingList)
 
-	// 3. ConfirmPayment (Payments module)
+	// 3. ConfirmPayment
 	saga.AddStep().
 		Action(saga.confirmPayment)
 
-	// 4. InitiateShopping (Depot module)
+	// 4. InitiateShopping
 	saga.AddStep().
 		Action(saga.initiateShopping)
 
-	// 5. ApproveOrder (Ordering module)
+	// 5. ApproveOrder
 	saga.AddStep().
 		Action(saga.approveOrder)
 
@@ -102,14 +91,10 @@ func (s createOrderSaga) cancelShoppingList(ctx context.Context, data *models.Cr
 }
 
 func (s createOrderSaga) confirmPayment(ctx context.Context, data *models.CreateOrderData) am.Command {
-	return am.NewCommand(
-		paymentspb.ConfirmPaymentCommand, // command name
-		paymentspb.CommandChannel,        // command channel
-		&paymentspb.ConfirmPayment{ // command payload
-			Id:     data.PaymentID,
-			Amount: data.Total,
-		},
-	)
+	return am.NewCommand(paymentspb.ConfirmPaymentCommand, paymentspb.CommandChannel, &paymentspb.ConfirmPayment{
+		Id:     data.PaymentID,
+		Amount: data.Total,
+	})
 }
 
 func (s createOrderSaga) initiateShopping(ctx context.Context, data *models.CreateOrderData) am.Command {

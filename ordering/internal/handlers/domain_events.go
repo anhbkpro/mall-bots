@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 
 	"eda-in-golang/internal/am"
 	"eda-in-golang/internal/ddd"
@@ -30,10 +29,8 @@ func RegisterDomainEventHandlers(subscriber ddd.EventSubscriber[ddd.Event], hand
 }
 
 func (h domainHandlers[T]) HandleEvent(ctx context.Context, event T) error {
-	fmt.Println("=== [Ordering module] Handling event:", event.EventName())
 	switch event.EventName() {
 	case domain.OrderCreatedEvent:
-		fmt.Println("=== [Ordering module] Handling event OrderCreated")
 		return h.onOrderCreated(ctx, event)
 	case domain.OrderReadiedEvent:
 		return h.onOrderReadied(ctx, event)
@@ -56,8 +53,6 @@ func (h domainHandlers[T]) onOrderCreated(ctx context.Context, event ddd.Event) 
 			Quantity:  int32(item.Quantity),
 		}
 	}
-	fmt.Println("=== [Ordering module] Publishing event OrderCreated")
-	// khi tao order, ta se publish event OrderCreated -> OrderAggregateChannel thong qua NATS
 	return h.publisher.Publish(ctx, orderingpb.OrderAggregateChannel,
 		ddd.NewEvent(orderingpb.OrderCreatedEvent, &orderingpb.OrderCreated{
 			Id:         payload.ID(),

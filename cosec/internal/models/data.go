@@ -1,6 +1,5 @@
 package models
 
-// we defined the saga data model here
 type CreateOrderData struct {
 	OrderID    string
 	CustomerID string

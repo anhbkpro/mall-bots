@@ -2,8 +2,6 @@ package handlers
 
 import (
 	"context"
-	"fmt"
-	"log"
 
 	"eda-in-golang/cosec/internal/models"
 	"eda-in-golang/internal/am"
@@ -25,9 +23,7 @@ func NewIntegrationEventHandlers(saga sec.Orchestrator[*models.CreateOrderData])
 }
 
 func RegisterIntegrationEventHandlers(subscriber am.EventSubscriber, handlers ddd.EventHandler[ddd.Event]) (err error) {
-	fmt.Println("=== [Cosec module] Registering integration event handlers")
 	evtMsgHandler := am.MessageHandlerFunc[am.IncomingEventMessage](func(ctx context.Context, eventMsg am.IncomingEventMessage) error {
-		fmt.Println("=== [Cosec module] Handling event:", eventMsg.EventName())
 		return handlers.HandleEvent(ctx, eventMsg)
 	})
 
@@ -37,7 +33,6 @@ func RegisterIntegrationEventHandlers(subscriber am.EventSubscriber, handlers dd
 }
 
 func (h integrationHandlers[T]) HandleEvent(ctx context.Context, event T) error {
-	fmt.Println("=== [Cosec module] Handling event:", event.EventName())
 	switch event.EventName() {
 	case orderingpb.OrderCreatedEvent:
 		return h.onOrderCreated(ctx, event)
@@ -68,9 +63,6 @@ func (h integrationHandlers[T]) onOrderCreated(ctx context.Context, event ddd.Ev
 		Items:      items,
 		Total:      total,
 	}
-
-	// Log the event
-	log.Printf("Received OrderCreated event: %v", event)
 
 	// Start the CreateOrderSaga
 	return h.orchestrator.Start(ctx, event.ID(), data)

@@ -20,23 +20,11 @@ func NewCommandHandlers(app application.App) ddd.CommandHandler[ddd.Command] {
 	}
 }
 
-// This function registers the ordering module to listen for and handle incoming command messages from the message broker.
-func RegisterCommandHandlers(subscriber am.CommandSubscriber, handlers ddd.CommandHandler[ddd.Command]) error {
-	// Creates a Message Handler Wrapper
-	cmdMsgHandler := am.CommandMessageHandlerFunc(func(ctx context.Context, cmdMsg am.IncomingCommandMessage) (ddd.Reply, error) {
-		return handlers.HandleCommand(ctx, cmdMsg)
-	})
-
-	// Subscribes to Command Channel
-	return subscriber.Subscribe(
-		orderingpb.CommandChannel, // Channel: orderingpb.CommandChannel - the message broker channel/topic to listen on
-		cmdMsgHandler,             // Handler: cmdMsgHandler - the function that processes incoming messages
-		am.MessageFilter{ // Message Filter: Only processes RejectOrderCommand and ApproveOrderCommand messages
-			orderingpb.RejectOrderCommand,
-			orderingpb.ApproveOrderCommand,
-		},
-		am.GroupName("ordering-commands"), // Group Name: "ordering-commands" - consumer group for load balancing and fault tolerance
-	)
+func RegisterCommandHandlers(subscriber am.RawMessageSubscriber, handlers am.RawMessageHandler) error {
+	return subscriber.Subscribe(orderingpb.CommandChannel, handlers, am.MessageFilter{
+		orderingpb.RejectOrderCommand,
+		orderingpb.ApproveOrderCommand,
+	}, am.GroupName("ordering-commands"))
 }
 
 func (h commandHandlers) HandleCommand(ctx context.Context, cmd ddd.Command) (ddd.Reply, error) {

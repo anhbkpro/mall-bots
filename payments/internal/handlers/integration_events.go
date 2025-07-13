@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 
 	"eda-in-golang/internal/am"
 	"eda-in-golang/internal/ddd"
@@ -27,15 +26,12 @@ func RegisterIntegrationEventHandlers(subscriber am.EventSubscriber, handlers dd
 		return handlers.HandleEvent(ctx, eventMsg)
 	})
 
-	// ! lang nghe event cua OrderAggregateChannel
 	return subscriber.Subscribe(orderingpb.OrderAggregateChannel, evtMsgHandler, am.MessageFilter{
 		orderingpb.OrderReadiedEvent,
 	}, am.GroupName("payment-orders"))
 }
 
 func (h integrationHandlers[T]) HandleEvent(ctx context.Context, event T) error {
-	fmt.Println("=== [Payments module] Received event:", event.EventName())
-
 	switch event.EventName() {
 	case orderingpb.OrderReadiedEvent:
 		return h.onOrderReadied(ctx, event)

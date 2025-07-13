@@ -25,9 +25,7 @@ func LogEventHandlerAccess[T ddd.Event](handlers ddd.EventHandler[T], label stri
 }
 
 func (h EventHandlers[T]) HandleEvent(ctx context.Context, event T) (err error) {
-	h.logger.Info().Msgf("--> Ordering.%s.On(%s) HandleEvent", h.label, event.EventName())
-	defer func() {
-		h.logger.Info().Err(err).Msgf("<-- Ordering.%s.On(%s) HandleEvent", h.label, event.EventName())
-	}()
+	h.logger.Info().Msgf("--> Ordering.%s.On(%s)", h.label, event.EventName())
+	defer func() { h.logger.Info().Err(err).Msgf("<-- Ordering.%s.On(%s)", h.label, event.EventName()) }()
 	return h.EventHandler.HandleEvent(ctx, event)
 }

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 
 	"eda-in-golang/internal/am"
 	"eda-in-golang/internal/ddd"
@@ -20,14 +19,8 @@ func NewCommandHandlers(app application.App) ddd.CommandHandler[ddd.Command] {
 	}
 }
 
-func RegisterCommandHandlers(subscriber am.CommandSubscriber, handlers ddd.CommandHandler[ddd.Command]) error {
-	fmt.Println("=== [Payments module] Registering command handlers")
-	cmdMsgHandler := am.CommandMessageHandlerFunc(func(ctx context.Context, cmdMsg am.IncomingCommandMessage) (ddd.Reply, error) {
-		return handlers.HandleCommand(ctx, cmdMsg)
-	})
-
-	fmt.Println("=== [Payments module] Subscribing to command channel")
-	return subscriber.Subscribe(paymentspb.CommandChannel, cmdMsgHandler, am.MessageFilter{
+func RegisterCommandHandlers(subscriber am.RawMessageSubscriber, handlers am.RawMessageHandler) error {
+	return subscriber.Subscribe(paymentspb.CommandChannel, handlers, am.MessageFilter{
 		paymentspb.ConfirmPaymentCommand,
 	}, am.GroupName("payment-commands"))
 }

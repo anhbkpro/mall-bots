@@ -2,7 +2,6 @@ package sec
 
 import (
 	"eda-in-golang/internal/am"
-	"fmt"
 )
 
 const (
@@ -66,37 +65,30 @@ func (s *saga[T]) AddStep() SagaStep[T] {
 }
 
 func (s *saga[T]) Name() string {
-	fmt.Println("=== [Sec] Getting saga name")
 	return s.name
 }
 
 func (s *saga[T]) ReplyTopic() string {
-	fmt.Println("=== [Sec] Getting reply topic")
 	return s.replyTopic
 }
 
 func (s *saga[T]) getSteps() []SagaStep[T] {
-	fmt.Println("=== [Sec] Getting steps")
 	return s.steps
 }
 
 func (s *SagaContext[T]) advance(steps int) {
-	fmt.Printf("=== [Sec] Advancing saga from step %d by %d steps (compensating: %v)\n", s.Step, steps, s.Compensating)
 	var dir = 1
 	if s.Compensating {
 		dir = -1
 	}
 
 	s.Step += dir * steps
-	fmt.Printf("=== [Sec] Advanced to step %d\n", s.Step)
 }
 
 func (s *SagaContext[T]) complete() {
-	fmt.Println("=== [Sec] Completing saga")
 	s.Done = true
 }
 
 func (s *SagaContext[T]) compensate() {
-	fmt.Println("=== [Sec] Compensating saga")
 	s.Compensating = true
 }

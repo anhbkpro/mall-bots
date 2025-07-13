@@ -25,7 +25,7 @@ func LogCommandHandlerAccess[T ddd.Command](handlers ddd.CommandHandler[T], labe
 }
 
 func (h CommandHandlers[T]) HandleCommand(ctx context.Context, command T) (reply ddd.Reply, err error) {
-	h.logger.Info().Msgf("--> Payments.%s.On(%s) HandleCommand", h.label, command.CommandName())
+	h.logger.Info().Msgf("--> Payments.%s.On(%s)", h.label, command.CommandName())
 	defer func() { h.logger.Info().Err(err).Msgf("<-- Payments.%s.On(%s)", h.label, command.CommandName()) }()
 	return h.CommandHandler.HandleCommand(ctx, command)
 }

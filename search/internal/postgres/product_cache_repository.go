@@ -9,19 +9,20 @@ import (
 	"github.com/jackc/pgerrcode"
 	"github.com/stackus/errors"
 
+	"eda-in-golang/internal/postgres"
 	"eda-in-golang/search/internal/application"
 	"eda-in-golang/search/internal/models"
 )
 
 type ProductCacheRepository struct {
 	tableName string
-	db        *sql.DB
+	db        postgres.DB
 	fallback  application.ProductRepository
 }
 
 var _ application.ProductCacheRepository = (*ProductCacheRepository)(nil)
 
-func NewProductCacheRepository(tableName string, db *sql.DB, fallback application.ProductRepository) ProductCacheRepository {
+func NewProductCacheRepository(tableName string, db postgres.DB, fallback application.ProductRepository) ProductCacheRepository {
 	return ProductCacheRepository{
 		tableName: tableName,
 		db:        db,
@@ -62,13 +63,13 @@ func (r ProductCacheRepository) Remove(ctx context.Context, productID string) er
 }
 
 func (r ProductCacheRepository) Find(ctx context.Context, productID string) (*models.Product, error) {
-	const query = `SELECT store_id, name FROM %s WHERE id = $1 LIMIT 1`
+	const query = `SELECT store_id, name, price FROM %s WHERE id = $1 LIMIT 1`
 
 	product := &models.Product{
 		ID: productID,
 	}
 
-	err := r.db.QueryRowContext(ctx, r.table(query), productID).Scan(&product.StoreID, &product.Name)
+	err := r.db.QueryRowContext(ctx, r.table(query), productID).Scan(&product.Name)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
 			return nil, errors.Wrap(err, "scanning product")

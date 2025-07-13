@@ -11,21 +11,13 @@ type (
 	StepActionFunc[T any]       func(ctx context.Context, data T) am.Command
 	StepReplyHandlerFunc[T any] func(ctx context.Context, data T, reply ddd.Reply) error
 
-	// SagaStep is a step in a saga.
 	SagaStep[T any] interface {
-		// Action is used to add an action to the step.
 		Action(fn StepActionFunc[T]) SagaStep[T]
-		// Compensation is used to add a compensation to the step.
 		Compensation(fn StepActionFunc[T]) SagaStep[T]
-		// OnActionReply is used to add a reply handler to the step.
 		OnActionReply(replyName string, fn StepReplyHandlerFunc[T]) SagaStep[T]
-		// OnCompensationReply is used to add a compensation reply handler to the step.
 		OnCompensationReply(replyName string, fn StepReplyHandlerFunc[T]) SagaStep[T]
-		// isInvocable is used to check if the step is invocable.
 		isInvocable(compensating bool) bool
-		// execute is used to execute the step.
 		execute(ctx context.Context, sagaCtx *SagaContext[T]) stepResult[T]
-		// handle is used to handle a reply from the step.
 		handle(ctx context.Context, sagaCtx *SagaContext[T], reply ddd.Reply) error
 	}
 
